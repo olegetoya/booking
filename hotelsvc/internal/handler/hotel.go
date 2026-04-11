@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"booking/hotelsvc/internal/dto"
-	"booking/hotelsvc/internal/my_errors"
+	"github.com/olegetoya/booking/hotelsvc/internal/dto"
+	"github.com/olegetoya/booking/hotelsvc/internal/my_errors"
 )
 
 type HotelHandler struct {

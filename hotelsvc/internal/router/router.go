@@ -3,7 +3,7 @@ package router
 import (
 	"net/http"
 
-	"booking/hotelsvc/internal/handler"
+	"github.com/olegetoya/booking/hotelsvc/internal/handler"
 )
 
 func NewRouter(hotelHandler *handler.HotelHandler, roomHandler *handler.RoomHandler) *http.ServeMux {

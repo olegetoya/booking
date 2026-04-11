@@ -12,12 +12,12 @@ import (
 	"syscall"
 	"time"
 
-	"booking/hotelsvc/internal/handler"
-	"booking/hotelsvc/internal/middleware"
-	"booking/hotelsvc/internal/repository/hotelrepo"
-	"booking/hotelsvc/internal/repository/roomrepo"
-	"booking/hotelsvc/internal/router"
-	"booking/hotelsvc/internal/service"
+	"github.com/olegetoya/booking/hotelsvc/internal/handler"
+	"github.com/olegetoya/booking/hotelsvc/internal/middleware"
+	"github.com/olegetoya/booking/hotelsvc/internal/repository/hotelrepo"
+	"github.com/olegetoya/booking/hotelsvc/internal/repository/roomrepo"
+	"github.com/olegetoya/booking/hotelsvc/internal/router"
+	"github.com/olegetoya/booking/hotelsvc/internal/service"
 )
 
 const (

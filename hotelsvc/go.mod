@@ -1,4 +1,4 @@
-module booking/hotelsvc
+module github.com/olegetoya/booking/hotelsvc
 
 go 1.25.5
 

@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	"booking/hotelsvc/internal/model"
-	"booking/hotelsvc/internal/my_errors"
 	_ "github.com/lib/pq"
+	"github.com/olegetoya/booking/hotelsvc/internal/model"
+	"github.com/olegetoya/booking/hotelsvc/internal/my_errors"
 )
 
 type RoomPostgres struct {

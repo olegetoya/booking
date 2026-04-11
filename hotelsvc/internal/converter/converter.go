@@ -3,8 +3,8 @@ package converter
 import (
 	"time"
 
-	"booking/hotelsvc/internal/dto"
-	"booking/hotelsvc/internal/model"
+	"github.com/olegetoya/booking/hotelsvc/internal/dto"
+	"github.com/olegetoya/booking/hotelsvc/internal/model"
 )
 
 func ConvertFromHotelDTO(d *dto.Hotel) (model.Hotel, error) {

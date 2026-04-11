@@ -4,10 +4,10 @@ import (
 	"errors"
 	"fmt"
 
-	"booking/hotelsvc/internal/converter"
-	"booking/hotelsvc/internal/dto"
-	"booking/hotelsvc/internal/model"
-	"booking/hotelsvc/internal/my_errors"
+	"github.com/olegetoya/booking/hotelsvc/internal/converter"
+	"github.com/olegetoya/booking/hotelsvc/internal/dto"
+	"github.com/olegetoya/booking/hotelsvc/internal/model"
+	"github.com/olegetoya/booking/hotelsvc/internal/my_errors"
 )
 
 type RoomService struct {
