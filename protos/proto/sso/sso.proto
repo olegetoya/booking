@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package auth;
 
+
 option go_package = "booking/protos/gen/go/sso;ssov1";
 
 service Auth {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"google.golang.org/grpc"
 	"log"
 	"log/slog"
 	"net/http"
@@ -58,6 +59,8 @@ func main() {
 		Handler:           loggedMux,
 		ReadHeaderTimeout: readHeaderTimeout,
 	}
+
+	gRPCserver := grpc.NewServer()
 
 	go func() {
 		slog.Info("server started", "addr", ":8080")

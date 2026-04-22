@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package rooms;
+
+
+option go_package = "booking/protos/gen/go/hotelsvc/rooms;roomsv1";
+
+service Rooms {
+  rpc GetAll (GetAllRequest) returns (GetAllResponse);
+  rpc Get (GetRequest) returns (GetResponse);
+}
+
+message GetAllRequest {
+  string HotelId = 1;
+}
+
+message GetAllResponse {
+  repeated Room rooms = 1;
+}
+
+message GetRequest {
+  int64 hotelID = 1;
+  int64 roomID = 2;
+}
+
+message GetResponse {
+  Room room = 1;
+}
+
+message Room {
+  int64 Id = 1;
+  int64 HotelId = 2;
+  int32 RoomNum = 3;
+  string Type = 5;
+  int64 Cost = 6;
+  int32 IsAvailable = 7;
+}
