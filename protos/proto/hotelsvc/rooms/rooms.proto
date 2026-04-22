@@ -3,7 +3,7 @@ syntax = "proto3";
 package rooms;
 
 
-option go_package = "booking/protos/gen/go/hotelsvc/rooms;roomsv1";
+option go_package = "github.com/olegetoya/booking/protos/gen/go/hotelsvc/rooms;roomsv1";
 
 service Rooms {
   rpc GetAll (GetAllRequest) returns (GetAllResponse);
