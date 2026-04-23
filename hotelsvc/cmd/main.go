@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	roomsv1 "github.com/olegetoya/booking/protos/gen/go/hotelsvc/rooms"
 	"google.golang.org/grpc"
 	"log"
 	"log/slog"
@@ -54,13 +55,13 @@ func main() {
 	mux := router.NewRouter(hotelHandle, roomHandle)
 	loggedMux := middleware.AccessLog(logger, mux)
 
+	gRPCServer := grpc.NewServer()
+	roomsv1.RegisterRoomsServer(gRPCServer, roomServe)
 	server := &http.Server{
 		Addr:              ":8080",
 		Handler:           loggedMux,
 		ReadHeaderTimeout: readHeaderTimeout,
 	}
-
-	gRPCserver := grpc.NewServer()
 
 	go func() {
 		slog.Info("server started", "addr", ":8080")

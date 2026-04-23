@@ -3,7 +3,6 @@ package service
 import (
 	"errors"
 	"fmt"
-
 	"github.com/olegetoya/booking/hotelsvc/internal/converter"
 	"github.com/olegetoya/booking/hotelsvc/internal/dto"
 	"github.com/olegetoya/booking/hotelsvc/internal/model"

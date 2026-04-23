@@ -11,7 +11,7 @@ service Rooms {
 }
 
 message GetAllRequest {
-  string HotelId = 1;
+  int64 hotelID = 1;
 }
 
 message GetAllResponse {
@@ -28,10 +28,10 @@ message GetResponse {
 }
 
 message Room {
-  int64 Id = 1;
-  int64 HotelId = 2;
-  int32 RoomNum = 3;
-  string Type = 5;
-  int64 Cost = 6;
-  int32 IsAvailable = 7;
+  int64 roomID = 1;
+  int64 hotelID = 2;
+  int32 roomNum = 3;
+  string type = 5;
+  int64 cost = 6;
+  int32 isAvailable = 7;
 }

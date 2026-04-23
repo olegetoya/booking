@@ -23,7 +23,7 @@ const (
 
 type GetAllRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	HotelId       string                 `protobuf:"bytes,1,opt,name=HotelId,proto3" json:"HotelId,omitempty"`
+	HotelID       int64                  `protobuf:"varint,1,opt,name=hotelID,proto3" json:"hotelID,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -58,11 +58,11 @@ func (*GetAllRequest) Descriptor() ([]byte, []int) {
 	return file_hotelsvc_rooms_rooms_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *GetAllRequest) GetHotelId() string {
+func (x *GetAllRequest) GetHotelID() int64 {
 	if x != nil {
-		return x.HotelId
+		return x.HotelID
 	}
-	return ""
+	return 0
 }
 
 type GetAllResponse struct {
@@ -207,12 +207,12 @@ func (x *GetResponse) GetRoom() *Room {
 
 type Room struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            int64                  `protobuf:"varint,1,opt,name=Id,proto3" json:"Id,omitempty"`
-	HotelId       int64                  `protobuf:"varint,2,opt,name=HotelId,proto3" json:"HotelId,omitempty"`
-	RoomNum       int32                  `protobuf:"varint,3,opt,name=RoomNum,proto3" json:"RoomNum,omitempty"`
-	Type          string                 `protobuf:"bytes,5,opt,name=Type,proto3" json:"Type,omitempty"`
-	Cost          int64                  `protobuf:"varint,6,opt,name=Cost,proto3" json:"Cost,omitempty"`
-	IsAvailable   int32                  `protobuf:"varint,7,opt,name=IsAvailable,proto3" json:"IsAvailable,omitempty"`
+	RoomID        int64                  `protobuf:"varint,1,opt,name=roomID,proto3" json:"roomID,omitempty"`
+	HotelID       int64                  `protobuf:"varint,2,opt,name=hotelID,proto3" json:"hotelID,omitempty"`
+	RoomNum       int32                  `protobuf:"varint,3,opt,name=roomNum,proto3" json:"roomNum,omitempty"`
+	Type          string                 `protobuf:"bytes,5,opt,name=type,proto3" json:"type,omitempty"`
+	Cost          int64                  `protobuf:"varint,6,opt,name=cost,proto3" json:"cost,omitempty"`
+	IsAvailable   int32                  `protobuf:"varint,7,opt,name=isAvailable,proto3" json:"isAvailable,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -247,16 +247,16 @@ func (*Room) Descriptor() ([]byte, []int) {
 	return file_hotelsvc_rooms_rooms_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *Room) GetId() int64 {
+func (x *Room) GetRoomID() int64 {
 	if x != nil {
-		return x.Id
+		return x.RoomID
 	}
 	return 0
 }
 
-func (x *Room) GetHotelId() int64 {
+func (x *Room) GetHotelID() int64 {
 	if x != nil {
-		return x.HotelId
+		return x.HotelID
 	}
 	return 0
 }
@@ -295,7 +295,7 @@ const file_hotelsvc_rooms_rooms_proto_rawDesc = "" +
 	"\n" +
 	"\x1ahotelsvc/rooms/rooms.proto\x12\x05rooms\")\n" +
 	"\rGetAllRequest\x12\x18\n" +
-	"\aHotelId\x18\x01 \x01(\tR\aHotelId\"3\n" +
+	"\ahotelID\x18\x01 \x01(\x03R\ahotelID\"3\n" +
 	"\x0eGetAllResponse\x12!\n" +
 	"\x05rooms\x18\x01 \x03(\v2\v.rooms.RoomR\x05rooms\">\n" +
 	"\n" +
@@ -303,17 +303,17 @@ const file_hotelsvc_rooms_rooms_proto_rawDesc = "" +
 	"\ahotelID\x18\x01 \x01(\x03R\ahotelID\x12\x16\n" +
 	"\x06roomID\x18\x02 \x01(\x03R\x06roomID\".\n" +
 	"\vGetResponse\x12\x1f\n" +
-	"\x04room\x18\x01 \x01(\v2\v.rooms.RoomR\x04room\"\x94\x01\n" +
-	"\x04Room\x12\x0e\n" +
-	"\x02Id\x18\x01 \x01(\x03R\x02Id\x12\x18\n" +
-	"\aHotelId\x18\x02 \x01(\x03R\aHotelId\x12\x18\n" +
-	"\aRoomNum\x18\x03 \x01(\x05R\aRoomNum\x12\x12\n" +
-	"\x04Type\x18\x05 \x01(\tR\x04Type\x12\x12\n" +
-	"\x04Cost\x18\x06 \x01(\x03R\x04Cost\x12 \n" +
-	"\vIsAvailable\x18\a \x01(\x05R\vIsAvailable2l\n" +
+	"\x04room\x18\x01 \x01(\v2\v.rooms.RoomR\x04room\"\x9c\x01\n" +
+	"\x04Room\x12\x16\n" +
+	"\x06roomID\x18\x01 \x01(\x03R\x06roomID\x12\x18\n" +
+	"\ahotelID\x18\x02 \x01(\x03R\ahotelID\x12\x18\n" +
+	"\aroomNum\x18\x03 \x01(\x05R\aroomNum\x12\x12\n" +
+	"\x04type\x18\x05 \x01(\tR\x04type\x12\x12\n" +
+	"\x04cost\x18\x06 \x01(\x03R\x04cost\x12 \n" +
+	"\visAvailable\x18\a \x01(\x05R\visAvailable2l\n" +
 	"\x05Rooms\x125\n" +
 	"\x06GetAll\x12\x14.rooms.GetAllRequest\x1a\x15.rooms.GetAllResponse\x12,\n" +
-	"\x03Get\x12\x11.rooms.GetRequest\x1a\x12.rooms.GetResponseB.Z,booking/protos/gen/go/hotelsvc/rooms;roomsv1b\x06proto3"
+	"\x03Get\x12\x11.rooms.GetRequest\x1a\x12.rooms.GetResponseBCZAgithub.com/olegetoya/booking/protos/gen/go/hotelsvc/rooms;roomsv1b\x06proto3"
 
 var (
 	file_hotelsvc_rooms_rooms_proto_rawDescOnce sync.Once

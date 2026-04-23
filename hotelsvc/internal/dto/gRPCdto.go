@@ -1,6 +1,6 @@
 package dto
 
-type gRPCRoom struct {
+type GRPCRoom struct {
 	Id          int64  `json:"id"`
 	HotelId     int64  `json:"hotelId"`
 	RoomNum     int    `json:"room_num"`
