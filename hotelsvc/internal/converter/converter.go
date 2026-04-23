@@ -1,6 +1,7 @@
 package converter
 
 import (
+	roomsv1 "github.com/olegetoya/booking/protos/gen/go/hotelsvc/rooms"
 	"time"
 
 	"github.com/olegetoya/booking/hotelsvc/internal/dto"
@@ -56,6 +57,34 @@ func ConvertToRoomDTO(r *model.Room) (dto.Room, error) {
 	room.Type = string(r.Type)
 	room.Cost = r.Cost
 	room.IsAvailable = int(r.IsAvailable)
+
+	return room, nil
+}
+
+func ConvertToGRPCRoom(r *model.Room) (*roomsv1.Room, error) {
+	var room roomsv1.Room
+
+	room.RoomID = r.Id
+	room.HotelID = r.HotelId
+	room.RoomNum = int32(int(r.RoomNum))
+	room.Type = string(r.Type)
+	room.Cost = int64(r.Cost)
+	room.IsAvailable = int32(int(r.IsAvailable))
+
+	return &room, nil
+}
+
+func ConvertFromGRPCRoom(r *roomsv1.Room) (model.Room, error) {
+	var room model.Room
+
+	room.Id = r.RoomID
+	room.HotelId = r.HotelID
+	room.RoomNum = int(r.RoomNum)
+	room.Type = model.RoomType(r.Type)
+	room.Cost = int(r.Cost)
+	room.IsAvailable = model.Availability(r.IsAvailable)
+	room.CreatedAt = time.Time{}
+	room.UpdatedAt = time.Time{}
 
 	return room, nil
 }
