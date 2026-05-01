@@ -6,6 +6,12 @@ import (
 	"os"
 )
 
+const (
+	envLocal = "local"
+	envDev   = "dev"
+	envProd  = "prod"
+)
+
 func main() {
 	cfg := config.MustLoad()
 
