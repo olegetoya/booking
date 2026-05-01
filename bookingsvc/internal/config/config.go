@@ -8,22 +8,32 @@ import (
 )
 
 type Config struct {
-	Env  string     `yaml:"env" env-default:"local"`
-	GRPC GRPCConfig `yaml:"grpc" env-required:"true"`
-	HTTP HTTPConfig `yaml:"http" env-required:"true"`
-}
-
-type GRPCConfig struct {
-	Port    int           `yaml:"port"`
-	Timeout time.Duration `yaml:"timeout"`
+	Env     string        `yaml:"env"`
+	HTTP    HTTPConfig    `yaml:"http"`
+	Clients ClientsConfig `yaml:"clients"`
 }
 
 type HTTPConfig struct {
-	Port              int           `yaml:"port" env-required:"true"`
-	ReadHeaderTimeout time.Duration `yaml:"readHeaderTimeout" env-default:"10s"`
-	ReadTimeout       time.Duration `yaml:"readTimeout" env-default:"10s"`
-	WriteTimeout      time.Duration `yaml:"writeTimeout" env-default:"10s"`
-	IdleTimeout       time.Duration `yaml:"idleTimeout" env-default:"10s"`
+	Host              string        `yaml:"host"`
+	Port              string        `yaml:"port"`
+	ReadHeaderTimeout time.Duration `yaml:"read_header_timeout"`
+	ReadTimeout       time.Duration `yaml:"read_timeout"`
+	WriteTimeout      time.Duration `yaml:"write_timeout"`
+	IdleTimeout       time.Duration `yaml:"idle_timeout"`
+}
+
+type ClientsConfig struct {
+	HotelSvc HotelSvcClientConfig `yaml:"hotelsvc"`
+}
+
+type HotelSvcClientConfig struct {
+	GRPC GRPCClientConfig `yaml:"grpc"`
+}
+
+type GRPCClientConfig struct {
+	Host    string        `yaml:"host"`
+	Port    string        `yaml:"port"`
+	Timeout time.Duration `yaml:"timeout"`
 }
 
 func MustLoad() *Config {

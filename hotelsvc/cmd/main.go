@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/joho/godotenv"
 	"github.com/olegetoya/booking/hotelsvc/internal/app"
 	"github.com/olegetoya/booking/hotelsvc/internal/config"
 	"log/slog"
@@ -16,12 +17,15 @@ const (
 )
 
 func main() {
+	_ = godotenv.Load()
+	dsn := os.Getenv("DB_DSN")
+
 	cfg := config.MustLoad()
-	logger := setupLogger(cfg.Env)
+	log := setupLogger(cfg.Env)
 
-	slog.Info("starting application", slog.Any("config", cfg))
+	log.Info("starting application", slog.Any("config", cfg))
 
-	application := app.New(logger, cfg.GRPC.Port, cfg.HTTP.Port, cfg.Database.DSN, cfg.HTTP.ReadHeaderTimeout)
+	application := app.New(log, cfg.GRPC.Port, cfg.HTTP.Port, dsn, cfg.HTTP.ReadHeaderTimeout)
 
 	go application.GRPCSrv.MustRun()
 	go application.HTTPSrv.MustRun()
@@ -31,8 +35,15 @@ func main() {
 	<-quit
 
 	application.GRPCSrv.Stop()
-	application.HTTPSrv.Stop()
-	application.DB.Close()
+	err := application.HTTPSrv.Stop()
+
+	if err != nil {
+		log.Error("failed to stop http server", slog.String("error", err.Error()))
+	}
+	err = application.DB.Close()
+	if err != nil {
+		log.Error("failed to close database", slog.String("error", err.Error()))
+	}
 }
 
 func setupLogger(env string) *slog.Logger {

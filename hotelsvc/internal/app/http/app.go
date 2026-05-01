@@ -38,7 +38,7 @@ func (a *App) Run() error {
 		slog.Int("port", a.port),
 	)
 
-	log.Info("starting HTTP server")
+	log.Info("starting http server")
 	err := a.HTTPServer.ListenAndServe()
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return fmt.Errorf("%s: %w", op, err)

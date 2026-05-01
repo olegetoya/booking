@@ -1,0 +1,13 @@
+version: "3"
+
+tasks:
+  gen:openapi:
+    desc: Generate OpenAPI server code for bookingsvc
+    cmds:
+      - mkdir -p internal/gen/bookingv1
+      - go run github.com/ogen-go/ogen/cmd/ogen@latest --target internal/gen/bookingv1 --package bookingv1 api/openapi/booking.openapi.yaml
+
+  gen:
+    desc: Generate all code
+    cmds:
+      - task: gen:openapi

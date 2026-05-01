@@ -1,6 +1,4 @@
 env: "local"
-database:
-  dsn: "user=booking_user password=booking_pass dbname=booking_db sslmode=disable"
 grpc:
   port: 50051
   timeout: 10h
