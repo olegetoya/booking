@@ -2,6 +2,7 @@ package app
 
 import (
 	"database/sql"
+	_ "github.com/lib/pq"
 	grpcapp "github.com/olegetoya/booking/hotelsvc/internal/app/grpc"
 	httpapp "github.com/olegetoya/booking/hotelsvc/internal/app/http"
 	"github.com/olegetoya/booking/hotelsvc/internal/handler"

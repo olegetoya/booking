@@ -23,7 +23,7 @@ func main() {
 	cfg := config.MustLoad()
 	log := setupLogger(cfg.Env)
 
-	log.Info("starting application", slog.Any("config", cfg))
+	log.Info("starting application hotelsvc", slog.Any("config", cfg))
 
 	application := app.New(log, cfg.GRPC.Port, cfg.HTTP.Port, dsn, cfg.HTTP.ReadHeaderTimeout)
 
