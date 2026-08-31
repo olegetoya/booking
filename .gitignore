@@ -1,5 +1,6 @@
 .idea/
 *.iml
+*.sh
 /bin/
 /dist/
 /vendor/

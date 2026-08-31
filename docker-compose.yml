@@ -1,0 +1,117 @@
+services:
+  hotels-db:
+    image: postgres:17-alpine
+
+    environment:
+      POSTGRES_USER: booking
+      POSTGRES_PASSWORD: booking
+      POSTGRES_DB: hotels
+
+    volumes:
+      - hotels_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U booking -d hotels"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+
+  hotels-migrate:
+    image: migrate/migrate:latest
+
+    volumes:
+      - ./hotelsvc/migrations:/migrations:ro
+
+    command:
+      [
+        "-path=/migrations",
+        "-database=postgres://booking:booking@hotels-db:5432/hotels?sslmode=disable",
+        "up"
+      ]
+
+    depends_on:
+      hotels-db:
+        condition: service_healthy
+
+
+  bookings-db:
+    image: postgres:17-alpine
+
+    environment:
+      POSTGRES_USER: booking
+      POSTGRES_PASSWORD: booking
+      POSTGRES_DB: bookings
+
+    volumes:
+      - bookings_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U booking -d bookings"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+
+  bookings-migrate:
+    image: migrate/migrate:latest
+
+    volumes:
+      - ./bookingsvc/migrations:/migrations:ro
+
+    command:
+      [
+        "-path=/migrations",
+        "-database=postgres://booking:booking@bookings-db:5432/bookings?sslmode=disable",
+        "up"
+      ]
+
+    depends_on:
+      bookings-db:
+        condition: service_healthy
+
+
+  hotelsvc:
+    build:
+      context: ./hotelsvc
+      dockerfile: Dockerfile
+
+    environment:
+      DB_DSN: "postgres://booking:booking@hotels-db:5432/hotels?sslmode=disable"
+
+    depends_on:
+      hotels-db:
+        condition: service_healthy
+
+      hotels-migrate:
+        condition: service_completed_successfully
+
+    ports:
+      - "8080:8080"
+      - "50051:50051"
+
+
+  bookingsvc:
+    build:
+      context: ./bookingsvc
+      dockerfile: Dockerfile
+
+    environment:
+      POSTGRES_DSN: "postgres://booking:booking@bookings-db:5432/bookings?sslmode=disable"
+
+    depends_on:
+      bookings-db:
+        condition: service_healthy
+
+      bookings-migrate:
+        condition: service_completed_successfully
+
+      hotelsvc:
+        condition: service_started
+
+    ports:
+      - "8081:8081"
+
+volumes:
+  hotels_data:
+  bookings_data:

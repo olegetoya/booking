@@ -71,7 +71,10 @@ func NewApp(log *slog.Logger, cfg *config.Config) (*App, error) {
 
 	bookingHandler := bookinghandler.NewHandler(bookingService)
 
-	bookingServer, err := bookinggen.NewServer(bookingHandler)
+	bookingServer, err := bookinggen.NewServer(
+		bookingHandler,
+		bookinggen.WithPathPrefix("/api/v1"),
+	)
 	if err != nil {
 		_ = db.Close()
 		return nil, fmt.Errorf("%s: create openapi server: %w", op, err)

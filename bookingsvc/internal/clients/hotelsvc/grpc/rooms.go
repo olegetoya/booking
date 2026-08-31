@@ -19,7 +19,7 @@ type RoomsClient struct {
 
 func NewRoomsClient(addr string, timeout time.Duration) (*RoomsClient, error) {
 	conn, err := grpc.NewClient(
-		addr,
+		"passthrough:///"+addr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {

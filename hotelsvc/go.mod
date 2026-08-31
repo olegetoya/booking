@@ -4,14 +4,14 @@ go 1.25.5
 
 require (
 	github.com/ilyakaznacheev/cleanenv v1.5.0
+	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.12.3
-	github.com/olegetoya/booking/protos v0.0.0-20260423130607-943a3b0b60ec
+	github.com/olegetoya/booking/protos v0.0.0-20260501164230-0a9d77a34f31
 	google.golang.org/grpc v1.80.0
 )
 
 require (
 	github.com/BurntSushi/toml v1.2.1 // indirect
-	github.com/joho/godotenv v1.5.1 // indirect
 	golang.org/x/net v0.49.0 // indirect
 	golang.org/x/sys v0.40.0 // indirect
 	golang.org/x/text v0.33.0 // indirect
