@@ -83,8 +83,6 @@ func (r *BookingRepository) CreateBooking(
     RETURNING id
 `
 
-	var created domain.Booking
-
 	err := r.db.QueryRowContext(
 		ctx,
 		query,
@@ -101,7 +99,7 @@ func (r *BookingRepository) CreateBooking(
 		return domain.Booking{}, fmt.Errorf("%s: insert booking: %w", op, err)
 	}
 
-	return created, nil
+	return booking, nil
 }
 
 func (r *BookingRepository) GetBookings(
