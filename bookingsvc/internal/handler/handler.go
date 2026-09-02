@@ -15,7 +15,7 @@ type BookingService interface {
 		hotelID int64,
 		dateFrom time.Time,
 		dateTo time.Time,
-	) ([]domain.Room, error)
+	) ([]domain.AvailableRoom, error)
 
 	CreateBooking(
 		ctx context.Context,
@@ -68,7 +68,7 @@ func (h *Handler) GetAvailableRooms(
 	}
 
 	return &gen.AvailableRoomsResponse{
-		Rooms: mapRoomsToGen(rooms),
+		Rooms: mapAvailableRoomsToGen(rooms),
 	}, nil
 }
 
@@ -101,13 +101,15 @@ func (h *Handler) CreateBooking(
 	}
 
 	return &gen.BookingResponse{
-		ID:       booking.ID,
-		UserID:   booking.UserID,
-		HotelID:  booking.HotelID,
-		RoomID:   booking.RoomID,
-		DateFrom: booking.DateFrom,
-		DateTo:   booking.DateTo,
-		Status:   booking.Status,
+		ID:            booking.ID,
+		UserID:        booking.UserID,
+		HotelID:       booking.HotelID,
+		RoomID:        booking.RoomID,
+		DateFrom:      booking.DateFrom,
+		DateTo:        booking.DateTo,
+		PricePerNight: booking.PricePerNight,
+		TotalCost:     booking.TotalCost,
+		Status:        booking.Status,
 	}, nil
 }
 
@@ -167,13 +169,15 @@ func (h *Handler) GetBookingByID(
 	}
 
 	return &gen.BookingResponse{
-		ID:       booking.ID,
-		UserID:   booking.UserID,
-		HotelID:  booking.HotelID,
-		RoomID:   booking.RoomID,
-		DateFrom: booking.DateFrom,
-		DateTo:   booking.DateTo,
-		Status:   booking.Status,
+		ID:            booking.ID,
+		UserID:        booking.UserID,
+		HotelID:       booking.HotelID,
+		RoomID:        booking.RoomID,
+		DateFrom:      booking.DateFrom,
+		DateTo:        booking.DateTo,
+		PricePerNight: booking.PricePerNight,
+		TotalCost:     booking.TotalCost,
+		Status:        booking.Status,
 	}, nil
 }
 
@@ -197,17 +201,20 @@ func (h *Handler) CancelBooking(
 	return &gen.CancelBookingNoContent{}, nil
 }
 
-func mapRoomsToGen(rooms []domain.Room) []gen.Room {
-	result := make([]gen.Room, 0, len(rooms))
+func mapAvailableRoomsToGen(
+	rooms []domain.AvailableRoom,
+) []gen.AvailableRoom {
+	result := make([]gen.AvailableRoom, 0, len(rooms))
 
 	for _, room := range rooms {
-		result = append(result, gen.Room{
-			ID:          room.ID,
-			HotelID:     room.HotelID,
-			RoomNum:     room.RoomNum,
-			Type:        room.Type,
-			Cost:        room.Cost,
-			IsAvailable: room.IsAvailable,
+		result = append(result, gen.AvailableRoom{
+			ID:           room.ID,
+			HotelID:      room.HotelID,
+			RoomNum:      room.RoomNum,
+			Type:         room.Type,
+			CostPerNight: room.CostPerNight,
+			TotalCost:    room.TotalCost,
+			IsAvailable:  room.IsAvailable,
 		})
 	}
 
@@ -219,13 +226,15 @@ func mapBookingsToGen(bookings []domain.Booking) []gen.BookingResponse {
 
 	for _, booking := range bookings {
 		result = append(result, gen.BookingResponse{
-			ID:       booking.ID,
-			UserID:   booking.UserID,
-			HotelID:  booking.HotelID,
-			RoomID:   booking.RoomID,
-			DateFrom: booking.DateFrom,
-			DateTo:   booking.DateTo,
-			Status:   booking.Status,
+			ID:            booking.ID,
+			UserID:        booking.UserID,
+			HotelID:       booking.HotelID,
+			RoomID:        booking.RoomID,
+			DateFrom:      booking.DateFrom,
+			DateTo:        booking.DateTo,
+			PricePerNight: booking.PricePerNight,
+			TotalCost:     booking.TotalCost,
+			Status:        booking.Status,
 		})
 	}
 

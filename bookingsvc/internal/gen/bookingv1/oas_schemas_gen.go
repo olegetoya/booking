@@ -6,18 +6,99 @@ import (
 	"time"
 )
 
+// Ref: #/components/schemas/AvailableRoom
+type AvailableRoom struct {
+	ID           int64  `json:"id"`
+	HotelID      int64  `json:"hotel_id"`
+	RoomNum      int64  `json:"room_num"`
+	Type         string `json:"type"`
+	CostPerNight int64  `json:"cost_per_night"`
+	TotalCost    int64  `json:"total_cost"`
+	IsAvailable  bool   `json:"is_available"`
+}
+
+// GetID returns the value of ID.
+func (s *AvailableRoom) GetID() int64 {
+	return s.ID
+}
+
+// GetHotelID returns the value of HotelID.
+func (s *AvailableRoom) GetHotelID() int64 {
+	return s.HotelID
+}
+
+// GetRoomNum returns the value of RoomNum.
+func (s *AvailableRoom) GetRoomNum() int64 {
+	return s.RoomNum
+}
+
+// GetType returns the value of Type.
+func (s *AvailableRoom) GetType() string {
+	return s.Type
+}
+
+// GetCostPerNight returns the value of CostPerNight.
+func (s *AvailableRoom) GetCostPerNight() int64 {
+	return s.CostPerNight
+}
+
+// GetTotalCost returns the value of TotalCost.
+func (s *AvailableRoom) GetTotalCost() int64 {
+	return s.TotalCost
+}
+
+// GetIsAvailable returns the value of IsAvailable.
+func (s *AvailableRoom) GetIsAvailable() bool {
+	return s.IsAvailable
+}
+
+// SetID sets the value of ID.
+func (s *AvailableRoom) SetID(val int64) {
+	s.ID = val
+}
+
+// SetHotelID sets the value of HotelID.
+func (s *AvailableRoom) SetHotelID(val int64) {
+	s.HotelID = val
+}
+
+// SetRoomNum sets the value of RoomNum.
+func (s *AvailableRoom) SetRoomNum(val int64) {
+	s.RoomNum = val
+}
+
+// SetType sets the value of Type.
+func (s *AvailableRoom) SetType(val string) {
+	s.Type = val
+}
+
+// SetCostPerNight sets the value of CostPerNight.
+func (s *AvailableRoom) SetCostPerNight(val int64) {
+	s.CostPerNight = val
+}
+
+// SetTotalCost sets the value of TotalCost.
+func (s *AvailableRoom) SetTotalCost(val int64) {
+	s.TotalCost = val
+}
+
+// SetIsAvailable sets the value of IsAvailable.
+func (s *AvailableRoom) SetIsAvailable(val bool) {
+	s.IsAvailable = val
+}
+
 // Ref: #/components/schemas/AvailableRoomsResponse
 type AvailableRoomsResponse struct {
-	Rooms []Room `json:"rooms"`
+	Rooms []AvailableRoom `json:"rooms"`
 }
 
 // GetRooms returns the value of Rooms.
-func (s *AvailableRoomsResponse) GetRooms() []Room {
+func (s *AvailableRoomsResponse) GetRooms() []AvailableRoom {
 	return s.Rooms
 }
 
 // SetRooms sets the value of Rooms.
-func (s *AvailableRoomsResponse) SetRooms(val []Room) {
+func (s *AvailableRoomsResponse) SetRooms(val []AvailableRoom) {
 	s.Rooms = val
 }
 
@@ -25,13 +106,15 @@ func (*AvailableRoomsResponse) getAvailableRoomsRes() {}
 
 // Ref: #/components/schemas/BookingResponse
 type BookingResponse struct {
-	ID       int64     `json:"id"`
-	UserID   int64     `json:"user_id"`
-	HotelID  int64     `json:"hotel_id"`
-	RoomID   int64     `json:"room_id"`
-	DateFrom time.Time `json:"date_from"`
-	DateTo   time.Time `json:"date_to"`
-	Status   string    `json:"status"`
+	ID            int64     `json:"id"`
+	UserID        int64     `json:"user_id"`
+	HotelID       int64     `json:"hotel_id"`
+	RoomID        int64     `json:"room_id"`
+	DateFrom      time.Time `json:"date_from"`
+	DateTo        time.Time `json:"date_to"`
+	Status        string    `json:"status"`
+	PricePerNight int64     `json:"price_per_night"`
+	TotalCost     int64     `json:"total_cost"`
 }
 
 // GetID returns the value of ID.
@@ -69,6 +152,16 @@ func (s *BookingResponse) GetStatus() string {
 	return s.Status
 }
 
+// GetPricePerNight returns the value of PricePerNight.
+func (s *BookingResponse) GetPricePerNight() int64 {
+	return s.PricePerNight
+}
+
+// GetTotalCost returns the value of TotalCost.
+func (s *BookingResponse) GetTotalCost() int64 {
+	return s.TotalCost
+}
+
 // SetID sets the value of ID.
 func (s *BookingResponse) SetID(val int64) {
 	s.ID = val
@@ -102,6 +195,16 @@ func (s *BookingResponse) SetDateTo(val time.Time) {
 // SetStatus sets the value of Status.
 func (s *BookingResponse) SetStatus(val string) {
 	s.Status = val
+}
+
+// SetPricePerNight sets the value of PricePerNight.
+func (s *BookingResponse) SetPricePerNight(val int64) {
+	s.PricePerNight = val
+}
+
+// SetTotalCost sets the value of TotalCost.
+func (s *BookingResponse) SetTotalCost(val int64) {
+	s.TotalCost = val
 }
 
 func (*BookingResponse) createBookingRes()  {}
@@ -291,74 +394,4 @@ func (o OptInt64) Or(d int64) int64 {
 		return v
 	}
 	return d
-}
-
-// Ref: #/components/schemas/Room
-type Room struct {
-	ID          int64  `json:"id"`
-	HotelID     int64  `json:"hotel_id"`
-	RoomNum     int64  `json:"room_num"`
-	Type        string `json:"type"`
-	Cost        int64  `json:"cost"`
-	IsAvailable bool   `json:"is_available"`
-}
-
-// GetID returns the value of ID.
-func (s *Room) GetID() int64 {
-	return s.ID
-}
-
-// GetHotelID returns the value of HotelID.
-func (s *Room) GetHotelID() int64 {
-	return s.HotelID
-}
-
-// GetRoomNum returns the value of RoomNum.
-func (s *Room) GetRoomNum() int64 {
-	return s.RoomNum
-}
-
-// GetType returns the value of Type.
-func (s *Room) GetType() string {
-	return s.Type
-}
-
-// GetCost returns the value of Cost.
-func (s *Room) GetCost() int64 {
-	return s.Cost
-}
-
-// GetIsAvailable returns the value of IsAvailable.
-func (s *Room) GetIsAvailable() bool {
-	return s.IsAvailable
-}
-
-// SetID sets the value of ID.
-func (s *Room) SetID(val int64) {
-	s.ID = val
-}
-
-// SetHotelID sets the value of HotelID.
-func (s *Room) SetHotelID(val int64) {
-	s.HotelID = val
-}
-
-// SetRoomNum sets the value of RoomNum.
-func (s *Room) SetRoomNum(val int64) {
-	s.RoomNum = val
-}
-
-// SetType sets the value of Type.
-func (s *Room) SetType(val string) {
-	s.Type = val
-}
-
-// SetCost sets the value of Cost.
-func (s *Room) SetCost(val int64) {
-	s.Cost = val
-}
-
-// SetIsAvailable sets the value of IsAvailable.
-func (s *Room) SetIsAvailable(val bool) {
-	s.IsAvailable = val
 }

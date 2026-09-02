@@ -1,0 +1,3 @@
+ALTER TABLE bookings
+    ADD COLUMN price_per_night BIGINT NOT NULL DEFAULT 0,
+    ADD COLUMN total_cost BIGINT NOT NULL DEFAULT 0;

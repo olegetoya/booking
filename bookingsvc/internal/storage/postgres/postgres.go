@@ -69,17 +69,19 @@ func (r *BookingRepository) CreateBooking(
 	const op = "storage.postgres.BookingRepository.CreateBooking"
 
 	query := `
-		INSERT INTO bookings (
-			user_id,
-			hotel_id,
-			room_id,
-			date_from,
-			date_to,
-			status
-		)
-		VALUES ($1, $2, $3, $4, $5, $6)
-		RETURNING id, user_id, hotel_id, room_id, date_from, date_to, status
-	`
+    INSERT INTO bookings (
+        user_id,
+        hotel_id,
+        room_id,
+        date_from,
+        date_to,
+        price_per_night,
+        total_cost,
+        status
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    RETURNING id
+`
 
 	var created domain.Booking
 
@@ -91,16 +93,10 @@ func (r *BookingRepository) CreateBooking(
 		booking.RoomID,
 		booking.DateFrom,
 		booking.DateTo,
+		booking.PricePerNight,
+		booking.TotalCost,
 		booking.Status,
-	).Scan(
-		&created.ID,
-		&created.UserID,
-		&created.HotelID,
-		&created.RoomID,
-		&created.DateFrom,
-		&created.DateTo,
-		&created.Status,
-	)
+	).Scan(&booking.ID)
 	if err != nil {
 		return domain.Booking{}, fmt.Errorf("%s: insert booking: %w", op, err)
 	}
@@ -123,6 +119,8 @@ func (r *BookingRepository) GetBookings(
 			room_id,
 			date_from,
 			date_to,
+			price_per_night,
+    		total_cost,
 			status
 		FROM bookings
 		WHERE ($1::bigint IS NULL OR user_id = $1)
@@ -153,6 +151,8 @@ func (r *BookingRepository) GetBookings(
 			&booking.RoomID,
 			&booking.DateFrom,
 			&booking.DateTo,
+			&booking.PricePerNight,
+			&booking.TotalCost,
 			&booking.Status,
 		); err != nil {
 			return nil, fmt.Errorf("%s: scan booking: %w", op, err)
@@ -175,7 +175,7 @@ func (r *BookingRepository) GetBookingByID(
 	const op = "storage.postgres.BookingRepository.GetBookingByID"
 
 	query := `
-		SELECT id, user_id, hotel_id, room_id, date_from, date_to, status
+		SELECT id, user_id, hotel_id, room_id, date_from, date_to, price_per_night, total_cost, status
 		FROM bookings
 		WHERE id = $1
 	`
@@ -189,6 +189,8 @@ func (r *BookingRepository) GetBookingByID(
 		&booking.RoomID,
 		&booking.DateFrom,
 		&booking.DateTo,
+		&booking.PricePerNight,
+		&booking.TotalCost,
 		&booking.Status,
 	)
 	if err != nil {

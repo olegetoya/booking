@@ -76,7 +76,7 @@ func (s *BookingService) GetAvailableRooms(
 	hotelID int64,
 	dateFrom time.Time,
 	dateTo time.Time,
-) ([]domain.Room, error) {
+) ([]domain.AvailableRoom, error) {
 	const op = "service.BookingService.GetAvailableRooms"
 
 	log := s.log.With(
@@ -91,24 +91,52 @@ func (s *BookingService) GetAvailableRooms(
 		return nil, fmt.Errorf("%s: %w", op, domain.ErrInvalidDateRange)
 	}
 
+	nights := int64(dateTo.Sub(dateFrom) / (24 * time.Hour))
+
 	rooms, err := s.roomsClient.GetAllRooms(ctx, hotelID)
 	if err != nil {
-		log.Error("failed to get rooms from hotelsvc", slog.Any("error", err))
-		return nil, fmt.Errorf("%s: get all rooms from hotelsvc: %w", op, err)
+		log.Error(
+			"failed to get rooms from hotelsvc",
+			slog.Any("error", err),
+		)
+
+		return nil, fmt.Errorf(
+			"%s: get all rooms from hotelsvc: %w",
+			op,
+			err,
+		)
 	}
 
-	bookedRoomIDs, err := s.repo.GetBookedRoomIDs(ctx, hotelID, dateFrom, dateTo)
+	bookedRoomIDs, err := s.repo.GetBookedRoomIDs(
+		ctx,
+		hotelID,
+		dateFrom,
+		dateTo,
+	)
 	if err != nil {
-		log.Error("failed to get booked room ids", slog.Any("error", err))
-		return nil, fmt.Errorf("%s: get booked room ids: %w", op, err)
+		log.Error(
+			"failed to get booked room ids",
+			slog.Any("error", err),
+		)
+
+		return nil, fmt.Errorf(
+			"%s: get booked room ids: %w",
+			op,
+			err,
+		)
 	}
 
 	booked := make(map[int64]struct{}, len(bookedRoomIDs))
+
 	for _, roomID := range bookedRoomIDs {
 		booked[roomID] = struct{}{}
 	}
 
-	availableRooms := make([]domain.Room, 0, len(rooms))
+	availableRooms := make(
+		[]domain.AvailableRoom,
+		0,
+		len(rooms),
+	)
 
 	for _, room := range rooms {
 		if !room.IsAvailable {
@@ -119,7 +147,20 @@ func (s *BookingService) GetAvailableRooms(
 			continue
 		}
 
-		availableRooms = append(availableRooms, room)
+		totalCost := room.Cost * nights
+
+		availableRooms = append(
+			availableRooms,
+			domain.AvailableRoom{
+				ID:           room.ID,
+				HotelID:      room.HotelID,
+				RoomNum:      room.RoomNum,
+				Type:         room.Type,
+				CostPerNight: room.Cost,
+				TotalCost:    totalCost,
+				IsAvailable:  room.IsAvailable,
+			},
+		)
 	}
 
 	log.Info(
@@ -127,6 +168,7 @@ func (s *BookingService) GetAvailableRooms(
 		slog.Int("total_rooms", len(rooms)),
 		slog.Int("booked_rooms", len(bookedRoomIDs)),
 		slog.Int("available_rooms", len(availableRooms)),
+		slog.Int64("nights", nights),
 	)
 
 	return availableRooms, nil
@@ -163,8 +205,13 @@ func (s *BookingService) CreateBooking(
 			return domain.Booking{}, fmt.Errorf("%s: %w", op, domain.ErrRoomNotFound)
 		}
 
-		log.Error("failed to get room from hotelsvc", slog.Any("error", err))
-		return domain.Booking{}, fmt.Errorf("%s: get room from hotelsvc: %w", op, err)
+		log.Error(
+			"failed to get room from hotelsvc",
+			slog.Any("error", err),
+		)
+
+		return domain.Booking{},
+			fmt.Errorf("%s: get room from hotelsvc: %w", op, err)
 	}
 
 	if room.HotelID != hotelID {
@@ -173,45 +220,75 @@ func (s *BookingService) CreateBooking(
 			slog.Int64("actual_hotel_id", room.HotelID),
 		)
 
-		return domain.Booking{}, fmt.Errorf("%s: %w", op, domain.ErrRoomFromOtherHotel)
+		return domain.Booking{},
+			fmt.Errorf("%s: %w", op, domain.ErrRoomFromOtherHotel)
 	}
 
 	if !room.IsAvailable {
 		log.Warn("room is marked as unavailable")
-		return domain.Booking{}, fmt.Errorf("%s: %w", op, domain.ErrRoomAlreadyBooked)
+
+		return domain.Booking{},
+			fmt.Errorf("%s: %w", op, domain.ErrRoomAlreadyBooked)
 	}
 
-	bookedRoomIDs, err := s.repo.GetBookedRoomIDs(ctx, hotelID, dateFrom, dateTo)
+	bookedRoomIDs, err := s.repo.GetBookedRoomIDs(
+		ctx,
+		hotelID,
+		dateFrom,
+		dateTo,
+	)
 	if err != nil {
-		log.Error("failed to check booked rooms", slog.Any("error", err))
-		return domain.Booking{}, fmt.Errorf("%s: check booked rooms: %w", op, err)
+		log.Error(
+			"failed to check booked rooms",
+			slog.Any("error", err),
+		)
+
+		return domain.Booking{},
+			fmt.Errorf("%s: check booked rooms: %w", op, err)
 	}
 
 	for _, bookedRoomID := range bookedRoomIDs {
 		if bookedRoomID == roomID {
 			log.Warn("room already booked for selected dates")
-			return domain.Booking{}, fmt.Errorf("%s: %w", op, domain.ErrRoomAlreadyBooked)
+
+			return domain.Booking{},
+				fmt.Errorf("%s: %w", op, domain.ErrRoomAlreadyBooked)
 		}
 	}
 
+	nights := int64(dateTo.Sub(dateFrom) / (24 * time.Hour))
+
+	pricePerNight := room.Cost
+	totalCost := pricePerNight * nights
+
 	booking := domain.Booking{
-		UserID:   userID,
-		HotelID:  hotelID,
-		RoomID:   roomID,
-		DateFrom: dateFrom,
-		DateTo:   dateTo,
-		Status:   "active",
+		UserID:        userID,
+		HotelID:       hotelID,
+		RoomID:        roomID,
+		DateFrom:      dateFrom,
+		DateTo:        dateTo,
+		PricePerNight: pricePerNight,
+		TotalCost:     totalCost,
+		Status:        "active",
 	}
 
 	createdBooking, err := s.repo.CreateBooking(ctx, booking)
 	if err != nil {
-		log.Error("failed to create booking", slog.Any("error", err))
-		return domain.Booking{}, fmt.Errorf("%s: create booking in repository: %w", op, err)
+		log.Error(
+			"failed to create booking",
+			slog.Any("error", err),
+		)
+
+		return domain.Booking{},
+			fmt.Errorf("%s: create booking in repository: %w", op, err)
 	}
 
 	log.Info(
 		"booking created",
 		slog.Int64("booking_id", createdBooking.ID),
+		slog.Int64("price_per_night", createdBooking.PricePerNight),
+		slog.Int64("total_cost", createdBooking.TotalCost),
+		slog.Int64("nights", nights),
 	)
 
 	return createdBooking, nil

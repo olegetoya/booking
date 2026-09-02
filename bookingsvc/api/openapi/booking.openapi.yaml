@@ -202,31 +202,43 @@ paths:
 
 components:
   schemas:
-    Room:
+    AvailableRoom:
       type: object
       required:
         - id
         - hotel_id
         - room_num
         - type
-        - cost
+        - cost_per_night
+        - total_cost
         - is_available
       properties:
         id:
           type: integer
           format: int64
+
         hotel_id:
           type: integer
           format: int64
+
         room_num:
           type: integer
           format: int64
+
         type:
           type: string
           example: "standard"
-        cost:
+
+        cost_per_night:
           type: integer
           format: int64
+          example: 5000
+
+        total_cost:
+          type: integer
+          format: int64
+          example: 25000
+
         is_available:
           type: boolean
 
@@ -238,7 +250,7 @@ components:
         rooms:
           type: array
           items:
-            $ref: "#/components/schemas/Room"
+            $ref: "#/components/schemas/AvailableRoom"
 
     CreateBookingRequest:
       type: object
@@ -287,6 +299,8 @@ components:
         - date_from
         - date_to
         - status
+        - price_per_night
+        - total_cost
       properties:
         id:
           type: integer
@@ -309,6 +323,14 @@ components:
         status:
           type: string
           example: "active"
+        price_per_night:
+          type: integer
+          format: int64
+          example: 5000
+        total_cost:
+          type: integer
+          format: int64
+          example: 25000
 
     ErrorResponse:
       type: object
