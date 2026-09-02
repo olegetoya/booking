@@ -10,4 +10,5 @@ const (
 	CreateBookingOperation     OperationName = "CreateBooking"
 	GetAvailableRoomsOperation OperationName = "GetAvailableRooms"
 	GetBookingByIDOperation    OperationName = "GetBookingByID"
+	GetBookingsOperation       OperationName = "GetBookings"
 )

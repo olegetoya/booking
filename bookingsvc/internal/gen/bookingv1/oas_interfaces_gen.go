@@ -16,3 +16,7 @@ type GetAvailableRoomsRes interface {
 type GetBookingByIDRes interface {
 	getBookingByIDRes()
 }
+
+type GetBookingsRes interface {
+	getBookingsRes()
+}

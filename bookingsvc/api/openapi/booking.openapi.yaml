@@ -59,6 +59,45 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
 
   /bookings:
+    get:
+      summary: Get bookings
+      operationId: getBookings
+      parameters:
+        - name: user_id
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+
+        - name: hotel_id
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+
+      responses:
+        "200":
+          description: Bookings list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingsResponse"
+
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
     post:
       summary: Create booking
       operationId: createBooking
@@ -227,6 +266,16 @@ components:
           type: string
           format: date
           example: "2026-05-05"
+
+    BookingsResponse:
+      type: object
+      required:
+        - bookings
+      properties:
+        bookings:
+          type: array
+          items:
+            $ref: "#/components/schemas/BookingResponse"
 
     BookingResponse:
       type: object

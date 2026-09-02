@@ -23,6 +23,12 @@ type BookingRepository interface {
 		booking domain.Booking,
 	) (domain.Booking, error)
 
+	GetBookings(
+		ctx context.Context,
+		userID *int64,
+		hotelID *int64,
+	) ([]domain.Booking, error)
+
 	GetBookingByID(
 		ctx context.Context,
 		bookingID int64,
@@ -209,6 +215,43 @@ func (s *BookingService) CreateBooking(
 	)
 
 	return createdBooking, nil
+}
+
+func (s *BookingService) GetBookings(
+	ctx context.Context,
+	userID *int64,
+	hotelID *int64,
+) ([]domain.Booking, error) {
+	const op = "service.BookingService.GetBookings"
+
+	log := s.log.With(
+		slog.String("op", op),
+	)
+
+	if userID != nil {
+		log = log.With(slog.Int64("user_id", *userID))
+	}
+
+	if hotelID != nil {
+		log = log.With(slog.Int64("hotel_id", *hotelID))
+	}
+
+	bookings, err := s.repo.GetBookings(ctx, userID, hotelID)
+	if err != nil {
+		log.Error(
+			"failed to get bookings",
+			slog.Any("error", err),
+		)
+
+		return nil, fmt.Errorf("%s: get bookings: %w", op, err)
+	}
+
+	log.Info(
+		"bookings received",
+		slog.Int("count", len(bookings)),
+	)
+
+	return bookings, nil
 }
 
 func (s *BookingService) GetBookingByID(

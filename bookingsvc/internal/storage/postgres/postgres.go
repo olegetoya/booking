@@ -108,6 +108,66 @@ func (r *BookingRepository) CreateBooking(
 	return created, nil
 }
 
+func (r *BookingRepository) GetBookings(
+	ctx context.Context,
+	userID *int64,
+	hotelID *int64,
+) ([]domain.Booking, error) {
+	const op = "storage.postgres.BookingRepository.GetBookings"
+
+	query := `
+		SELECT
+			id,
+			user_id,
+			hotel_id,
+			room_id,
+			date_from,
+			date_to,
+			status
+		FROM bookings
+		WHERE ($1::bigint IS NULL OR user_id = $1)
+		  AND ($2::bigint IS NULL OR hotel_id = $2)
+		ORDER BY id DESC
+	`
+
+	rows, err := r.db.QueryContext(
+		ctx,
+		query,
+		userID,
+		hotelID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("%s: query bookings: %w", op, err)
+	}
+	defer rows.Close()
+
+	bookings := make([]domain.Booking, 0)
+
+	for rows.Next() {
+		var booking domain.Booking
+
+		if err := rows.Scan(
+			&booking.ID,
+			&booking.UserID,
+			&booking.HotelID,
+			&booking.RoomID,
+			&booking.DateFrom,
+			&booking.DateTo,
+			&booking.Status,
+		); err != nil {
+			return nil, fmt.Errorf("%s: scan booking: %w", op, err)
+		}
+
+		bookings = append(bookings, booking)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("%s: rows error: %w", op, err)
+	}
+
+	return bookings, nil
+}
+
 func (r *BookingRepository) GetBookingByID(
 	ctx context.Context,
 	bookingID int64,

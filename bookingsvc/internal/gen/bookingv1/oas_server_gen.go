@@ -32,6 +32,12 @@ type Handler interface {
 	//
 	// GET /bookings/{booking_id}
 	GetBookingByID(ctx context.Context, params GetBookingByIDParams) (GetBookingByIDRes, error)
+	// GetBookings implements getBookings operation.
+	//
+	// Get bookings.
+	//
+	// GET /bookings
+	GetBookings(ctx context.Context, params GetBookingsParams) (GetBookingsRes, error)
 }
 
 // Server implements http server based on OpenAPI v3 specification and

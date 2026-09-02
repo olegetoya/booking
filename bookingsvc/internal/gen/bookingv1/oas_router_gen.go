@@ -77,11 +77,13 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 				if len(elem) == 0 {
 					switch r.Method {
+					case "GET":
+						s.handleGetBookingsRequest([0]string{}, elemIsEscaped, w, r)
 					case "POST":
 						s.handleCreateBookingRequest([0]string{}, elemIsEscaped, w, r)
 					default:
 						s.notAllowed(w, r, notAllowedParams{
-							allowedMethods: "POST",
+							allowedMethods: "GET,POST",
 							allowedHeaders: rn3AllowedHeaders,
 							acceptPost:     "application/json",
 							acceptPatch:    "",
@@ -293,6 +295,15 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 
 				if len(elem) == 0 {
 					switch method {
+					case "GET":
+						r.name = GetBookingsOperation
+						r.summary = "Get bookings"
+						r.operationID = "getBookings"
+						r.operationGroup = ""
+						r.pathPattern = "/bookings"
+						r.args = args
+						r.count = 0
+						return r, true
 					case "POST":
 						r.name = CreateBookingOperation
 						r.summary = "Create booking"

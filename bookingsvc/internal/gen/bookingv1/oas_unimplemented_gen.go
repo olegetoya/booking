@@ -48,3 +48,12 @@ func (UnimplementedHandler) GetAvailableRooms(ctx context.Context, params GetAva
 func (UnimplementedHandler) GetBookingByID(ctx context.Context, params GetBookingByIDParams) (r GetBookingByIDRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
+
+// GetBookings implements getBookings operation.
+//
+// Get bookings.
+//
+// GET /bookings
+func (UnimplementedHandler) GetBookings(ctx context.Context, params GetBookingsParams) (r GetBookingsRes, _ error) {
+	return r, ht.ErrNotImplemented
+}

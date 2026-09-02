@@ -26,6 +26,12 @@ type BookingService interface {
 		dateTo time.Time,
 	) (domain.Booking, error)
 
+	GetBookings(
+		ctx context.Context,
+		userID *int64,
+		hotelID *int64,
+	) ([]domain.Booking, error)
+
 	GetBookingByID(ctx context.Context, bookingID int64) (domain.Booking, error)
 
 	CancelBooking(ctx context.Context, bookingID int64) error
@@ -105,13 +111,51 @@ func (h *Handler) CreateBooking(
 	}, nil
 }
 
+func (h *Handler) GetBookings(
+	ctx context.Context,
+	params gen.GetBookingsParams,
+) (gen.GetBookingsRes, error) {
+
+	var userID *int64
+	var hotelID *int64
+
+	if value, ok := params.UserID.Get(); ok {
+		userID = &value
+	}
+
+	if value, ok := params.HotelID.Get(); ok {
+		hotelID = &value
+	}
+
+	if userID == nil && hotelID == nil {
+		return &gen.GetBookingsBadRequest{
+			Error: "user_id or hotel_id is required",
+		}, nil
+	}
+
+	bookings, err := h.service.GetBookings(
+		ctx,
+		userID,
+		hotelID,
+	)
+	if err != nil {
+		return &gen.GetBookingsInternalServerError{
+			Error: err.Error(),
+		}, nil
+	}
+
+	return &gen.BookingsResponse{
+		Bookings: mapBookingsToGen(bookings),
+	}, nil
+}
+
 func (h *Handler) GetBookingByID(
 	ctx context.Context,
 	params gen.GetBookingByIDParams,
 ) (gen.GetBookingByIDRes, error) {
 	booking, err := h.service.GetBookingByID(ctx, params.BookingID)
 	if err != nil {
-		if errors.Is(err, domain.ErrRoomNotFound) {
+		if errors.Is(err, domain.ErrBookingNotFound) {
 			return &gen.GetBookingByIDNotFound{
 				Error: "booking not found",
 			}, nil
@@ -164,6 +208,24 @@ func mapRoomsToGen(rooms []domain.Room) []gen.Room {
 			Type:        room.Type,
 			Cost:        room.Cost,
 			IsAvailable: room.IsAvailable,
+		})
+	}
+
+	return result
+}
+
+func mapBookingsToGen(bookings []domain.Booking) []gen.BookingResponse {
+	result := make([]gen.BookingResponse, 0, len(bookings))
+
+	for _, booking := range bookings {
+		result = append(result, gen.BookingResponse{
+			ID:       booking.ID,
+			UserID:   booking.UserID,
+			HotelID:  booking.HotelID,
+			RoomID:   booking.RoomID,
+			DateFrom: booking.DateFrom,
+			DateTo:   booking.DateTo,
+			Status:   booking.Status,
 		})
 	}
 

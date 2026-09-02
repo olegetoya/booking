@@ -298,3 +298,118 @@ func decodeGetBookingByIDParams(args [1]string, argsEscaped bool, r *http.Reques
 	}
 	return params, nil
 }
+
+// GetBookingsParams is parameters of getBookings operation.
+type GetBookingsParams struct {
+	UserID  OptInt64 `json:",omitempty,omitzero"`
+	HotelID OptInt64 `json:",omitempty,omitzero"`
+}
+
+func unpackGetBookingsParams(packed middleware.Parameters) (params GetBookingsParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "user_id",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.UserID = v.(OptInt64)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "hotel_id",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.HotelID = v.(OptInt64)
+		}
+	}
+	return params
+}
+
+func decodeGetBookingsParams(args [0]string, argsEscaped bool, r *http.Request) (params GetBookingsParams, _ error) {
+	q := uri.NewQueryDecoder(r.URL.Query())
+	// Decode query: user_id.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "user_id",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotUserIDVal int64
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToInt64(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotUserIDVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.UserID.SetTo(paramsDotUserIDVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "user_id",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: hotel_id.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "hotel_id",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotHotelIDVal int64
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToInt64(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotHotelIDVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.HotelID.SetTo(paramsDotHotelIDVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "hotel_id",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
