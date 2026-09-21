@@ -4,7 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
+	"github.com/olegetoya/booking/bookingsvc/internal/events"
 	"log/slog"
+	"strconv"
 	"time"
 
 	"github.com/olegetoya/booking/bookingsvc/internal/domain"
@@ -53,21 +56,32 @@ type RoomsClient interface {
 	) (domain.Room, error)
 }
 
+type EventPublisher interface {
+	Produce(
+		ctx context.Context,
+		key string,
+		value any,
+	) error
+}
+
 type BookingService struct {
 	log         *slog.Logger
 	repo        BookingRepository
 	roomsClient RoomsClient
+	publisher   EventPublisher
 }
 
 func NewBookingService(
 	log *slog.Logger,
 	repo BookingRepository,
 	roomsClient RoomsClient,
+	eventPublisher EventPublisher,
 ) *BookingService {
 	return &BookingService{
 		log:         log,
 		repo:        repo,
 		roomsClient: roomsClient,
+		publisher:   eventPublisher,
 	}
 }
 
@@ -283,6 +297,26 @@ func (s *BookingService) CreateBooking(
 			fmt.Errorf("%s: create booking in repository: %w", op, err)
 	}
 
+	event := events.BookingCreated{
+		EventID:    uuid.NewString(),
+		BookingID:  booking.ID,
+		UserID:     booking.UserID,
+		HotelID:    booking.HotelID,
+		RoomID:     booking.RoomID,
+		DateFrom:   booking.DateFrom,
+		DateTo:     booking.DateTo,
+		TotalCost:  booking.TotalCost,
+		OccurredAt: time.Now(),
+	}
+
+	if err := s.publisher.Produce(
+		ctx,
+		strconv.FormatInt(booking.ID, 10),
+		event,
+	); err != nil {
+		return domain.Booking{}, fmt.Errorf("%s: produce booking created event: %w", op, err)
+	}
+
 	log.Info(
 		"booking created",
 		slog.Int64("booking_id", createdBooking.ID),
@@ -376,6 +410,20 @@ func (s *BookingService) CancelBooking(
 
 		log.Error("failed to cancel booking", slog.Any("error", err))
 		return fmt.Errorf("%s: cancel booking: %w", op, err)
+	}
+
+	event := events.BookingCancelled{
+		EventID:    uuid.NewString(),
+		BookingID:  bookingID,
+		OccurredAt: time.Now(),
+	}
+
+	if err := s.publisher.Produce(
+		ctx,
+		strconv.FormatInt(bookingID, 10),
+		event,
+	); err != nil {
+		return fmt.Errorf("%s: produce booking cancelled event: %w", op, err)
 	}
 
 	log.Info("booking cancelled")

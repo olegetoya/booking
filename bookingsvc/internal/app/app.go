@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/olegetoya/booking/bookingsvc/internal/kafka"
 	"log/slog"
 	"net"
 	"net/http"
@@ -63,10 +64,18 @@ func NewApp(log *slog.Logger, cfg *config.Config) (*App, error) {
 		return nil, fmt.Errorf("%s: create hotels grpc client: %w", op, err)
 	}
 
+	producer, err := kafka.NewProducer(&cfg.Kafka)
+
+	if err != nil {
+		return nil, fmt.Errorf("%s: create kafka producer: %w", op, err)
+	}
+	defer producer.Close()
+
 	bookingService := service.NewBookingService(
 		log,
 		bookingRepo,
 		roomsClient,
+		producer,
 	)
 
 	bookingHandler := bookinghandler.NewHandler(bookingService)

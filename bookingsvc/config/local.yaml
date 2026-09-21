@@ -14,3 +14,7 @@ clients:
       host: "localhost"
       port: "50051"
       timeout: 5s
+kafka:
+  brokers:
+    - localhost:9092
+  topic: bookings.events

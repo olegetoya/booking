@@ -11,6 +11,7 @@ type Config struct {
 	Env     string        `yaml:"env"`
 	HTTP    HTTPConfig    `yaml:"http"`
 	Clients ClientsConfig `yaml:"clients"`
+	Kafka   KafkaConfig   `yaml:"kafka"`
 }
 
 type HTTPConfig struct {
@@ -34,6 +35,11 @@ type GRPCClientConfig struct {
 	Host    string        `yaml:"host"`
 	Port    string        `yaml:"port"`
 	Timeout time.Duration `yaml:"timeout"`
+}
+
+type KafkaConfig struct {
+	Brokers []string `yaml:"brokers"`
+	Topic   string   `yaml:"topic"`
 }
 
 func MustLoad() *Config {

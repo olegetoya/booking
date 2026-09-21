@@ -1,6 +1,6 @@
 module github.com/olegetoya/booking/bookingsvc
 
-go 1.25.5
+go 1.26.0
 
 require (
 	github.com/go-chi/chi/v5 v5.2.5
@@ -11,6 +11,7 @@ require (
 	github.com/lib/pq v1.12.3
 	github.com/ogen-go/ogen v1.20.3
 	github.com/olegetoya/booking/protos v0.0.0-20260501164230-0a9d77a34f31
+	github.com/twmb/franz-go v1.22.0
 	go.opentelemetry.io/otel v1.43.0
 	go.opentelemetry.io/otel/metric v1.43.0
 	go.opentelemetry.io/otel/trace v1.43.0
@@ -27,10 +28,13 @@ require (
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/klauspost/compress v1.20.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
+	github.com/pierrec/lz4/v4 v4.1.30 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
+	github.com/twmb/franz-go/pkg/kmsg v1.14.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.1 // indirect

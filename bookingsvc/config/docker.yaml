@@ -14,3 +14,8 @@ clients:
       host: "hotelsvc"
       port: "50051"
       timeout: 5s
+      
+kafka:
+  brokers:
+    - kafka:29092
+  topic: bookings.events
