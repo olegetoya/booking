@@ -86,6 +86,9 @@ services:
       hotels-migrate:
         condition: service_completed_successfully
 
+      kafka:
+        condition: service_healthy
+
     ports:
       - "8080:8080"
       - "50051:50051"
@@ -138,6 +141,16 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
     volumes:
       - kafka-data:/var/lib/kafka/data

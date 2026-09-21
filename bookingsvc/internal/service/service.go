@@ -300,13 +300,13 @@ func (s *BookingService) CreateBooking(
 	event := events.BookingCreated{
 		EventID:    uuid.NewString(),
 		EventType:  "booking.created",
-		BookingID:  booking.ID,
-		UserID:     booking.UserID,
-		HotelID:    booking.HotelID,
-		RoomID:     booking.RoomID,
-		DateFrom:   booking.DateFrom,
-		DateTo:     booking.DateTo,
-		TotalCost:  booking.TotalCost,
+		BookingID:  createdBooking.ID,
+		UserID:     createdBooking.UserID,
+		HotelID:    createdBooking.HotelID,
+		RoomID:     createdBooking.RoomID,
+		DateFrom:   createdBooking.DateFrom,
+		DateTo:     createdBooking.DateTo,
+		TotalCost:  createdBooking.TotalCost,
 		OccurredAt: time.Now(),
 	}
 
