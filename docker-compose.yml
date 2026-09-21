@@ -86,9 +86,6 @@ services:
       hotels-migrate:
         condition: service_completed_successfully
 
-      kafka:
-        condition: service_healthy
-
     ports:
       - "8080:8080"
       - "50051:50051"
@@ -111,6 +108,9 @@ services:
 
       hotelsvc:
         condition: service_started
+
+      kafka:
+        condition: service_healthy
 
     ports:
       - "8081:8081"

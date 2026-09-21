@@ -312,7 +312,7 @@ func (s *BookingService) CreateBooking(
 
 	if err := s.publisher.Produce(
 		ctx,
-		strconv.FormatInt(booking.ID, 10),
+		strconv.FormatInt(createdBooking.ID, 10),
 		event,
 	); err != nil {
 		return domain.Booking{}, fmt.Errorf("%s: produce booking created event: %w", op, err)
