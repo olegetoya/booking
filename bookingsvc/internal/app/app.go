@@ -28,6 +28,7 @@ type App struct {
 	log        *slog.Logger
 	httpServer *http.Server
 	db         *sql.DB
+	producer   *kafka.Producer
 }
 
 func NewApp(log *slog.Logger, cfg *config.Config) (*App, error) {
@@ -64,12 +65,12 @@ func NewApp(log *slog.Logger, cfg *config.Config) (*App, error) {
 		return nil, fmt.Errorf("%s: create hotels grpc client: %w", op, err)
 	}
 
-	producer, err := kafka.NewProducer(&cfg.Kafka)
+	producer, err := kafka.NewProducer(cfg.Kafka.Brokers, cfg.Kafka.Topic)
 
 	if err != nil {
+		_ = db.Close()
 		return nil, fmt.Errorf("%s: create kafka producer: %w", op, err)
 	}
-	defer producer.Close()
 
 	bookingService := service.NewBookingService(
 		log,
@@ -85,6 +86,7 @@ func NewApp(log *slog.Logger, cfg *config.Config) (*App, error) {
 		bookinggen.WithPathPrefix("/api/v1"),
 	)
 	if err != nil {
+		producer.Close()
 		_ = db.Close()
 		return nil, fmt.Errorf("%s: create openapi server: %w", op, err)
 	}
@@ -110,6 +112,7 @@ func NewApp(log *slog.Logger, cfg *config.Config) (*App, error) {
 		log:        log,
 		httpServer: httpServer,
 		db:         db,
+		producer:   producer,
 	}, nil
 }
 
@@ -144,6 +147,9 @@ func (a *App) Stop(ctx context.Context) error {
 	}
 
 	log.Info("stopped http server", slog.String("port", a.httpServer.Addr))
+
+	a.producer.Close()
+	log.Info("stopped kafka producer")
 
 	if err := a.db.Close(); err != nil {
 		if resultErr != nil {

@@ -299,6 +299,7 @@ func (s *BookingService) CreateBooking(
 
 	event := events.BookingCreated{
 		EventID:    uuid.NewString(),
+		EventType:  "booking.created",
 		BookingID:  booking.ID,
 		UserID:     booking.UserID,
 		HotelID:    booking.HotelID,
@@ -414,6 +415,7 @@ func (s *BookingService) CancelBooking(
 
 	event := events.BookingCancelled{
 		EventID:    uuid.NewString(),
+		EventType:  "booking.cancelled",
 		BookingID:  bookingID,
 		OccurredAt: time.Now(),
 	}

@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/olegetoya/booking/bookingsvc/internal/config"
+	"time"
 
 	"github.com/twmb/franz-go/pkg/kgo"
 )
@@ -14,20 +14,30 @@ type Producer struct {
 	topic  string
 }
 
-func NewProducer(cfg *config.KafkaConfig) (*Producer, error) {
+func NewProducer(brokers []string, topic string) (*Producer, error) {
 
 	const op = "kafka.NewProducer"
 
 	client, err := kgo.NewClient(
-		kgo.SeedBrokers(cfg.Brokers...),
+		kgo.SeedBrokers(brokers...),
+		kgo.RecordDeliveryTimeout(5*time.Second),
+		kgo.RecordRetries(3),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("%s: create kafka client: %w", op, err)
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := client.Ping(ctx); err != nil {
+		client.Close()
+		return nil, fmt.Errorf("ping kafka: %w", err)
+	}
+
 	return &Producer{
 		client: client,
-		topic:  cfg.Topic,
+		topic:  topic,
 	}, nil
 }
 

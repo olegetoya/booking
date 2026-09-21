@@ -4,6 +4,7 @@ import "time"
 
 type BookingCreated struct {
 	EventID    string    `json:"event_id"`
+	EventType  string    `json:"event_type"`
 	BookingID  int64     `json:"booking_id"`
 	UserID     int64     `json:"user_id"`
 	HotelID    int64     `json:"hotel_id"`
@@ -16,6 +17,7 @@ type BookingCreated struct {
 
 type BookingCancelled struct {
 	EventID    string    `json:"event_id"`
+	EventType  string    `json:"event_type"`
 	BookingID  int64     `json:"booking_id"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
