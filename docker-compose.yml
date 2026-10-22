@@ -115,6 +115,20 @@ services:
     ports:
       - "8081:8081"
 
+  notificationsvc:
+    build:
+      context: ./notificationsvc
+      dockerfile: Dockerfile
+
+    env_file:
+      - ./notificationsvc/.env
+
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+    restart: on-failure
+    
   kafka:
     image: apache/kafka:4.1.1
     container_name: kafka

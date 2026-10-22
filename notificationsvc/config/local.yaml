@@ -1,0 +1,12 @@
+env: local
+
+kafka:
+  brokers:
+    - localhost:9092
+  topic: bookings.events
+  group_id: notificationsvc
+
+smtp:
+  host: smtp.gmail.com
+  port: "587"
+  recipient: pendosoleg228@gmail.com
