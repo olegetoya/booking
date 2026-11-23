@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/olegetoya/booking/notificationsvc/internal/handler"
 	"github.com/twmb/franz-go/pkg/kgo"
 )
 
@@ -95,13 +96,29 @@ func (c *Consumer) Run(ctx context.Context) error {
 				return
 			}
 
-			if err := c.handler.Handle(
+			err := c.handler.Handle(
 				ctx,
 				record.Key,
 				record.Value,
-			); err != nil {
-				handleErr = err
+			)
+
+			if err == nil {
+				return
 			}
+
+			if errors.Is(err, handler.ErrInvalidEvent) {
+				c.log.Warn(
+					"skipping invalid kafka event",
+					slog.String("topic", record.Topic),
+					slog.Int("partition", int(record.Partition)),
+					slog.Int64("offset", record.Offset),
+					slog.Any("error", err),
+				)
+
+				return
+			}
+
+			handleErr = err
 		})
 
 		if handleErr != nil {

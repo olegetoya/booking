@@ -58,7 +58,7 @@ func (s *NotificationService) BookingCreated(
 		event.TotalCost,
 	)
 
-	if err := s.repo.Send(ctx, s.email, subject, body); err != nil {
+	if err := s.sendWithRetry(ctx, s.email, subject, body); err != nil {
 		return fmt.Errorf("%s: send email: %w", op, err)
 	}
 
