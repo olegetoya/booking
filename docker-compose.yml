@@ -169,7 +169,19 @@ services:
     volumes:
       - kafka-data:/var/lib/kafka/data
 
+  prometheus:
+    image: prom/prometheus:v3.7.3
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+
 volumes:
   hotels_data:
   bookings_data:
   kafka-data:
+  prometheus-data:
