@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/olegetoya/booking/notificationsvc/internal/handler"
+	"github.com/olegetoya/booking/notificationsvc/internal/metrics"
 	"github.com/twmb/franz-go/pkg/kgo"
 )
 
@@ -82,6 +83,7 @@ func (c *Consumer) Run(ctx context.Context) error {
 				slog.Any("error", err),
 			)
 			fetchErr = errors.Join(fetchErr, err)
+			metrics.FetchError(topic)
 		})
 
 		if fetchErr != nil {
@@ -96,10 +98,26 @@ func (c *Consumer) Run(ctx context.Context) error {
 				return
 			}
 
+			start := time.Now()
+
 			err := c.handler.Handle(
 				ctx,
 				record.Key,
 				record.Value,
+			)
+
+			result := "success"
+
+			if errors.Is(err, handler.ErrInvalidEvent) {
+				result = "invalid"
+			} else if err != nil {
+				result = "error"
+			}
+
+			metrics.ObserveMessage(
+				record.Topic,
+				result,
+				time.Since(start),
 			)
 
 			if err == nil {
@@ -127,9 +145,12 @@ func (c *Consumer) Run(ctx context.Context) error {
 		}
 
 		if err := c.client.CommitUncommittedOffsets(ctx); err != nil {
+			metrics.Commit("error")
 			c.client.AllowRebalance()
 			return fmt.Errorf("commit kafka offsets: %w", err)
 		}
+
+		metrics.Commit("success")
 
 		c.client.AllowRebalance()
 	}

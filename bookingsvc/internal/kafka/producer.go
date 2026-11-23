@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
-
+	"github.com/olegetoya/booking/bookingsvc/internal/metrics"
 	"github.com/twmb/franz-go/pkg/kgo"
+	"time"
 )
 
 type Producer struct {
@@ -47,6 +47,18 @@ func (p *Producer) Produce(
 	value any,
 ) error {
 	const op = "kafka.Produce"
+
+	start := time.Now()
+	result := "error"
+
+	defer func() {
+		metrics.ObserveKafkaProduce(
+			p.topic,
+			result,
+			time.Since(start),
+		)
+	}()
+
 	data, err := json.Marshal(value)
 	if err != nil {
 		return fmt.Errorf("%s: marshal kafka message: %w", op, err)
@@ -62,6 +74,7 @@ func (p *Producer) Produce(
 		return fmt.Errorf("%s: produce kafka message: %w", op, err)
 	}
 
+	result = "success"
 	return nil
 }
 
