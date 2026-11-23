@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/olegetoya/booking/bookingsvc/internal/kafka"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log/slog"
 	"net"
 	"net/http"
@@ -14,14 +15,14 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
+	_ "github.com/lib/pq"
 	hotelsgrpc "github.com/olegetoya/booking/bookingsvc/internal/clients/hotelsvc/grpc"
 	"github.com/olegetoya/booking/bookingsvc/internal/config"
 	bookinggen "github.com/olegetoya/booking/bookingsvc/internal/gen/bookingv1"
 	bookinghandler "github.com/olegetoya/booking/bookingsvc/internal/handler"
+	"github.com/olegetoya/booking/bookingsvc/internal/metrics"
 	"github.com/olegetoya/booking/bookingsvc/internal/service"
 	"github.com/olegetoya/booking/bookingsvc/internal/storage/postgres"
-
-	_ "github.com/lib/pq"
 )
 
 type App struct {
@@ -94,9 +95,11 @@ func NewApp(log *slog.Logger, cfg *config.Config) (*App, error) {
 	router := chi.NewRouter()
 
 	router.Use(middleware.Logger)
+	router.Use(metrics.HTTP)
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.Timeout(10 * time.Second))
 
+	router.Handle("/metrics", promhttp.Handler())
 	router.Mount("/api/v1", bookingServer)
 
 	httpServer := &http.Server{

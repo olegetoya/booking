@@ -12,6 +12,7 @@ import (
 	"github.com/olegetoya/booking/hotelsvc/internal/router"
 	"github.com/olegetoya/booking/hotelsvc/internal/service"
 	grpcSrv "github.com/olegetoya/booking/hotelsvc/internal/service/grpc"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log/slog"
 	"time"
 )
@@ -43,6 +44,7 @@ func New(
 	roomHandle := handler.NewRoomHandler(roomServe)
 
 	mux := router.NewRouter(hotelHandle, roomHandle)
+	mux.Handle("/metrics", promhttp.Handler())
 	loggedMux := middleware.AccessLog(log, mux)
 
 	roomServeGRPC := grpcSrv.NewRoomsServer(roomRepo)
