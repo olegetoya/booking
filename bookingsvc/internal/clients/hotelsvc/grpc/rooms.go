@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/olegetoya/booking/bookingsvc/internal/domain"
+	"github.com/olegetoya/booking/bookingsvc/internal/metrics"
 	roomsv1 "github.com/olegetoya/booking/protos/gen/go/hotelsvc/rooms"
 
 	"google.golang.org/grpc"
@@ -21,6 +22,7 @@ func NewRoomsClient(addr string, timeout time.Duration) (*RoomsClient, error) {
 	conn, err := grpc.NewClient(
 		"passthrough:///"+addr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(metrics.UnaryClientInterceptor),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("create hotelsvc grpc client: %w", err)
