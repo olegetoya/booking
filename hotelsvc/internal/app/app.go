@@ -6,6 +6,7 @@ import (
 	grpcapp "github.com/olegetoya/booking/hotelsvc/internal/app/grpc"
 	httpapp "github.com/olegetoya/booking/hotelsvc/internal/app/http"
 	"github.com/olegetoya/booking/hotelsvc/internal/handler"
+	"github.com/olegetoya/booking/hotelsvc/internal/metrics"
 	"github.com/olegetoya/booking/hotelsvc/internal/middleware"
 	"github.com/olegetoya/booking/hotelsvc/internal/repository/hotelrepo"
 	"github.com/olegetoya/booking/hotelsvc/internal/repository/roomrepo"
@@ -44,8 +45,10 @@ func New(
 	roomHandle := handler.NewRoomHandler(roomServe)
 
 	mux := router.NewRouter(hotelHandle, roomHandle)
-	mux.Handle("/metrics", promhttp.Handler())
-	loggedMux := middleware.AccessLog(log, mux)
+	mux.Handle("GET /metrics", promhttp.Handler())
+
+	instrumentedMux := metrics.HTTP(mux)
+	loggedMux := middleware.AccessLog(log, instrumentedMux)
 
 	roomServeGRPC := grpcSrv.NewRoomsServer(roomRepo)
 
