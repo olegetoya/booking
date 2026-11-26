@@ -2,6 +2,10 @@ package app
 
 import (
 	"database/sql"
+	"log/slog"
+	"time"
+
+	"github.com/XSAM/otelsql"
 	_ "github.com/lib/pq"
 	grpcapp "github.com/olegetoya/booking/hotelsvc/internal/app/grpc"
 	httpapp "github.com/olegetoya/booking/hotelsvc/internal/app/http"
@@ -14,8 +18,7 @@ import (
 	"github.com/olegetoya/booking/hotelsvc/internal/service"
 	grpcSrv "github.com/olegetoya/booking/hotelsvc/internal/service/grpc"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"log/slog"
-	"time"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 type App struct {
@@ -50,7 +53,7 @@ func New(
 	instrumentedMux := metrics.HTTP(mux)
 	loggedMux := middleware.AccessLog(log, instrumentedMux)
 
-	roomServeGRPC := grpcSrv.NewRoomsServer(roomRepo)
+	roomServeGRPC := grpcSrv.NewRoomsServer(roomRepo, log)
 
 	httpApp := httpapp.New(log, loggedMux, httpPort, readHeaderTimeout)
 	grpcApp := grpcapp.New(log, roomServeGRPC, grpcPort)
@@ -63,7 +66,15 @@ func New(
 }
 
 func initDB(dsn string) (*sql.DB, error) {
-	db, err := sql.Open("postgres", dsn)
+	db, err := otelsql.Open("postgres", dsn,
+		otelsql.WithAttributes(attribute.String("db.system.name", "postgresql")),
+		otelsql.WithSpanOptions(otelsql.SpanOptions{
+			DisableQuery:         true,
+			RecordError:          func(error) bool { return false },
+			OmitConnResetSession: true,
+			OmitRows:             true,
+		}),
+	)
 	if err != nil {
 		return nil, err
 	}

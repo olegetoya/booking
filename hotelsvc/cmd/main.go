@@ -1,13 +1,16 @@
 package main
 
 import (
-	"github.com/joho/godotenv"
-	"github.com/olegetoya/booking/hotelsvc/internal/app"
-	"github.com/olegetoya/booking/hotelsvc/internal/config"
+	"context"
 	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/joho/godotenv"
+	"github.com/olegetoya/booking/hotelsvc/internal/app"
+	"github.com/olegetoya/booking/hotelsvc/internal/config"
+	"github.com/olegetoya/booking/hotelsvc/internal/telemetry"
 )
 
 const (
@@ -23,6 +26,12 @@ func main() {
 	cfg := config.MustLoad()
 	log := setupLogger(cfg.Env)
 
+	shutdownTracing, err := telemetry.Init(context.Background(), log, "hotelsvc")
+	if err != nil {
+		panic(err)
+	}
+	defer shutdownTracing()
+
 	log.Info("starting application hotelsvc", slog.Any("config", cfg))
 
 	application := app.New(log, cfg.GRPC.Port, cfg.HTTP.Port, dsn, cfg.HTTP.ReadHeaderTimeout)
@@ -35,7 +44,7 @@ func main() {
 	<-quit
 
 	application.GRPCSrv.Stop()
-	err := application.HTTPSrv.Stop()
+	err = application.HTTPSrv.Stop()
 
 	if err != nil {
 		log.Error("failed to stop http server", slog.String("error", err.Error()))
@@ -62,5 +71,8 @@ func setupLogger(env string) *slog.Logger {
 			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}),
 		)
 	}
-	return log
+	if log == nil {
+		log = slog.Default()
+	}
+	return slog.New(telemetry.LogHandler{Handler: log.Handler()})
 }

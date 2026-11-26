@@ -20,9 +20,9 @@ type KafkaConfig struct {
 }
 
 type SMTPConfig struct {
-	Host      string `yaml:"host"`
-	Port      string `yaml:"port"`
-	Recipient string `yaml:"recipient"`
+	Host      string `yaml:"host" env:"SMTP_HOST"`
+	Port      string `yaml:"port" env:"SMTP_PORT"`
+	Recipient string `yaml:"recipient" env:"SMTP_RECIPIENT"`
 }
 
 func MustLoad() *Config {

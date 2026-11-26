@@ -4,25 +4,28 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/olegetoya/booking/bookingsvc/internal/kafka"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log/slog"
 	"net"
 	"net/http"
 	"os"
 	"time"
 
+	"github.com/XSAM/otelsql"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-
 	_ "github.com/lib/pq"
 	hotelsgrpc "github.com/olegetoya/booking/bookingsvc/internal/clients/hotelsvc/grpc"
 	"github.com/olegetoya/booking/bookingsvc/internal/config"
 	bookinggen "github.com/olegetoya/booking/bookingsvc/internal/gen/bookingv1"
 	bookinghandler "github.com/olegetoya/booking/bookingsvc/internal/handler"
+	"github.com/olegetoya/booking/bookingsvc/internal/kafka"
 	"github.com/olegetoya/booking/bookingsvc/internal/metrics"
 	"github.com/olegetoya/booking/bookingsvc/internal/service"
 	"github.com/olegetoya/booking/bookingsvc/internal/storage/postgres"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/propagation"
 )
 
 type App struct {
@@ -40,7 +43,15 @@ func NewApp(log *slog.Logger, cfg *config.Config) (*App, error) {
 		return nil, fmt.Errorf("%s: POSTGRES_DSN is empty", op)
 	}
 
-	db, err := sql.Open("postgres", postgresDSN)
+	db, err := otelsql.Open("postgres", postgresDSN,
+		otelsql.WithAttributes(attribute.String("db.system.name", "postgresql")),
+		otelsql.WithSpanOptions(otelsql.SpanOptions{
+			DisableQuery:         true,
+			RecordError:          func(error) bool { return false },
+			OmitConnResetSession: true,
+			OmitRows:             true,
+		}),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("%s: open postgres: %w", op, err)
 	}
@@ -84,6 +95,7 @@ func NewApp(log *slog.Logger, cfg *config.Config) (*App, error) {
 
 	bookingServer, err := bookinggen.NewServer(
 		bookingHandler,
+		bookinggen.WithTracerProvider(otel.GetTracerProvider()),
 		bookinggen.WithPathPrefix("/api/v1"),
 	)
 	if err != nil {
@@ -100,7 +112,10 @@ func NewApp(log *slog.Logger, cfg *config.Config) (*App, error) {
 	router.Use(middleware.Timeout(10 * time.Second))
 
 	router.Handle("/metrics", promhttp.Handler())
-	router.Mount("/api/v1", bookingServer)
+	router.Mount("/api/v1", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := otel.GetTextMapPropagator().Extract(r.Context(), propagation.HeaderCarrier(r.Header))
+		bookingServer.ServeHTTP(w, r.WithContext(ctx))
+	}))
 
 	httpServer := &http.Server{
 		Addr:              net.JoinHostPort(cfg.HTTP.Host, cfg.HTTP.Port),

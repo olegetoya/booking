@@ -129,15 +129,50 @@
 9. `Notification Svc` получает событие из Kafka.
 10. `Notification Svc` отправляет уведомление пользователю или владельцу отеля.
 
-## Observability
+## Трассировка и метрики
 
-Для наблюдаемости сервисов используются:
+OpenTelemetry SDK в `bookingsvc`, `hotelsvc` и `notificationsvc` отправляет spans пакетами по OTLP/HTTP в Jaeger v2. Jaeger принимает, сохраняет и читает трассировки из одноузлового Elasticsearch. Volume `elasticsearch-data` сохраняет трассировки при пересоздании контейнеров. На хост опубликован только UI Jaeger на loopback среди компонентов трассировки.
 
-- **Jaeger** — distributed tracing;
-- **Prometheus** — сбор метрик;
-- **Zap** — структурированное логирование.
+Серверный span создаёт ogen, а chi извлекает входящий W3C Trace Context перед вызовом ogen. Бизнес-операции и обращения к PostgreSQL получают контекст текущего запроса. gRPC stats handlers передают этот контекст между сервисами. Kafka producer добавляет `traceparent` и, если есть, `tracestate` в заголовки записи. Consumer продолжает трассировку с контекстом своего жизненного цикла. В Jaeger SMTP-попытки видны под span отправки уведомления. SQL-параметры, текст SQL, адреса и тело письма в spans не добавляются. Логи `slog`, записанные с активным span, содержат `trace_id` и `span_id`.
 
-Это позволяет отслеживать прохождение запросов между микросервисами, контролировать основные метрики приложения и анализировать ошибки по логам.
+| Операция | Дочерние операции |
+| --- | --- |
+| `CreateBooking` | BookingService, gRPC `Rooms.Get`, PostgreSQL обоих сервисов, Kafka publish/process, уведомление `booking.created`, SMTP |
+| `CancelBooking` | BookingService, PostgreSQL, Kafka publish/process, уведомление `booking.cancelled`, SMTP |
+| `GetAvailableRooms` | BookingService, gRPC `Rooms.GetAll`, PostgreSQL обоих сервисов |
+| `GetBookings`, `GetBookingByID` | BookingService, PostgreSQL bookingsvc |
+
+В Compose заданы `OTEL_SERVICE_NAME` и `OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318` для каждого сервиса. Локальный SDK записывает 100% spans и отправляет буфер при штатной остановке. Запросы `/metrics` не создают spans. Метрики Kafka Exporter и приложений доступны в [Prometheus](http://localhost:9090/targets), дашборды — в [Grafana](http://localhost:3000).
+
+### Запуск и безопасная проверка
+
+Для обычного запуска используйте `docker compose up -d --build` с настроенным `notificationsvc/.env`. Чтобы проверить создание и отмену бронирования без отправки реальных писем, запустите стек с Mailpit. Override направляет SMTP на локальный приёмник с STARTTLS и тестовыми адресами.
+
+```bash
+export SMTP_TEST_CERT_DIR="$(mktemp -d)"
+openssl req -x509 -newkey rsa:2048 -nodes -days 7 \
+  -subj '/CN=smtp-test' -addext 'subjectAltName=DNS:smtp-test' \
+  -keyout "$SMTP_TEST_CERT_DIR/key.pem" -out "$SMTP_TEST_CERT_DIR/cert.pem"
+docker compose -f docker-compose.yml -f observability/compose.smtp-test.yml config --quiet
+docker compose -f docker-compose.yml -f observability/compose.smtp-test.yml up -d --build --wait
+```
+
+Для проверки нужен отель со свободным номером. Создайте тестовый отель и номер, если подходящих данных ещё нет. REST API hotelsvc отвечает на создание статусом 201 без идентификатора. Запрос к PostgreSQL ниже только читает ID созданного отеля.
+
+```bash
+hotel_name="Tracing test $(date +%s)"
+curl -fsS -X POST http://localhost:8080/hotels -H 'Content-Type: application/json' \
+  -d "{\"name\":\"$hotel_name\",\"address\":\"Test address\",\"rating\":3,\"rooms_num\":1,\"rooms_occupied\":0}"
+hotel_id="$(docker compose exec -T hotels-db psql -At -U booking -d hotels \
+  -c "SELECT id FROM hotels WHERE name = '$hotel_name' ORDER BY id DESC LIMIT 1")"
+curl -fsS -X POST "http://localhost:8080/hotels/$hotel_id/rooms" \
+  -H 'Content-Type: application/json' \
+  -d '{"room_num":101,"type":"standard","cost":1000,"is_available":1}'
+
+python3 observability/verify_traces.py "$hotel_id"
+```
+
+Проверка выполняет пять HTTP-запросов, сверяет статусы, TraceID, родительские связи и доставку двух писем в Mailpit. Подождите несколько секунд, пока SDK и Jaeger запишут пакеты. В [Jaeger UI](http://localhost:16686) выберите сервис `bookingsvc` и имя операции либо откройте `http://localhost:16686/trace/<trace_id>`. Ту же трассировку можно получить через Query API по адресу `http://localhost:16686/api/traces/<trace_id>`. Письма видны в [Mailpit](http://localhost:8025).
 
 ## Infrastructure
 
@@ -145,8 +180,8 @@
 
 Для локального запуска всей инфраструктуры используется:
 
-```text
-docker-compose
+```bash
+docker compose up -d --build
 ```
 
 В контейнерах запускаются:
@@ -154,8 +189,8 @@ docker-compose
 - микросервисы приложения;
 - PostgreSQL;
 - Apache Kafka;
-- Jaeger;
-- Prometheus;
+- Jaeger и Elasticsearch;
+- Prometheus и Grafana;
 - связанные инфраструктурные компоненты.
 
 ## Tech Stack
@@ -177,9 +212,9 @@ docker-compose
 
 ### Observability
 
-- Jaeger
-- Prometheus
-- Zap
+- OpenTelemetry, Jaeger v2 и Elasticsearch
+- Prometheus, Grafana и Kafka Exporter
+- slog
 
 ### Infrastructure
 

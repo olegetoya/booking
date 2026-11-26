@@ -10,6 +10,11 @@ import (
 	"github.com/olegetoya/booking/notificationsvc/internal/handler"
 	"github.com/olegetoya/booking/notificationsvc/internal/metrics"
 	"github.com/twmb/franz-go/pkg/kgo"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type MessageHandler interface {
@@ -98,45 +103,7 @@ func (c *Consumer) Run(ctx context.Context) error {
 				return
 			}
 
-			start := time.Now()
-
-			err := c.handler.Handle(
-				ctx,
-				record.Key,
-				record.Value,
-			)
-
-			result := "success"
-
-			if errors.Is(err, handler.ErrInvalidEvent) {
-				result = "invalid"
-			} else if err != nil {
-				result = "error"
-			}
-
-			metrics.ObserveMessage(
-				record.Topic,
-				result,
-				time.Since(start),
-			)
-
-			if err == nil {
-				return
-			}
-
-			if errors.Is(err, handler.ErrInvalidEvent) {
-				c.log.Warn(
-					"skipping invalid kafka event",
-					slog.String("topic", record.Topic),
-					slog.Int("partition", int(record.Partition)),
-					slog.Int64("offset", record.Offset),
-					slog.Any("error", err),
-				)
-
-				return
-			}
-
-			handleErr = err
+			handleErr = c.processRecord(ctx, record)
 		})
 
 		if handleErr != nil {
@@ -158,4 +125,70 @@ func (c *Consumer) Run(ctx context.Context) error {
 
 func (c *Consumer) Close() {
 	c.client.Close()
+}
+
+func (c *Consumer) processRecord(ctx context.Context, record *kgo.Record) error {
+	carrier := propagation.MapCarrier{}
+	for _, header := range record.Headers {
+		if header.Key == "traceparent" || header.Key == "tracestate" {
+			carrier.Set(header.Key, string(header.Value))
+		}
+	}
+	ctx = otel.GetTextMapPropagator().Extract(ctx, carrier)
+	ctx, span := otel.Tracer("notificationsvc/kafka").Start(ctx, "process "+record.Topic,
+		trace.WithSpanKind(trace.SpanKindConsumer),
+		trace.WithAttributes(
+			attribute.String("messaging.system", "kafka"),
+			attribute.String("messaging.destination.name", record.Topic),
+			attribute.String("messaging.operation.type", "process"),
+			attribute.Int64("messaging.kafka.offset", record.Offset),
+			attribute.Int("messaging.destination.partition.id", int(record.Partition)),
+		),
+	)
+	defer span.End()
+
+	start := time.Now()
+
+	err := c.handler.Handle(
+		ctx,
+		record.Key,
+		record.Value,
+	)
+
+	result := "success"
+
+	if errors.Is(err, handler.ErrInvalidEvent) {
+		result = "invalid"
+	} else if err != nil {
+		result = "error"
+	}
+
+	span.SetAttributes(attribute.String("messaging.process.result", result))
+	metrics.ObserveMessage(
+		record.Topic,
+		result,
+		time.Since(start),
+	)
+
+	if err == nil {
+		c.log.InfoContext(ctx, "processed kafka event", slog.String("topic", record.Topic), slog.Int("partition", int(record.Partition)), slog.Int64("offset", record.Offset))
+		return nil
+	}
+
+	if errors.Is(err, handler.ErrInvalidEvent) {
+		c.log.WarnContext(ctx,
+			"skipping invalid kafka event",
+			slog.String("topic", record.Topic),
+			slog.Int("partition", int(record.Partition)),
+			slog.Int64("offset", record.Offset),
+			slog.Any("error", err),
+		)
+
+		return nil
+	}
+
+	span.RecordError(errors.New("event processing failed"))
+	span.SetStatus(codes.Error, "event processing failed")
+	c.log.ErrorContext(ctx, "kafka event processing failed", slog.Any("error", err))
+	return err
 }

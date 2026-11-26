@@ -3,10 +3,12 @@ package bookingv1
 import (
 	"context"
 	"errors"
-	"github.com/olegetoya/booking/bookingsvc/internal/domain"
 	"time"
 
+	"github.com/olegetoya/booking/bookingsvc/internal/domain"
 	gen "github.com/olegetoya/booking/bookingsvc/internal/gen/bookingv1"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type BookingService interface {
@@ -62,6 +64,7 @@ func (h *Handler) GetAvailableRooms(
 		dateTo,
 	)
 	if err != nil {
+		trace.SpanFromContext(ctx).SetStatus(codes.Error, "internal server error")
 		return &gen.GetAvailableRoomsInternalServerError{
 			Error: err.Error(),
 		}, nil
@@ -95,6 +98,7 @@ func (h *Handler) CreateBooking(
 			}, nil
 		}
 
+		trace.SpanFromContext(ctx).SetStatus(codes.Error, "internal server error")
 		return &gen.CreateBookingInternalServerError{
 			Error: err.Error(),
 		}, nil
@@ -141,6 +145,7 @@ func (h *Handler) GetBookings(
 		hotelID,
 	)
 	if err != nil {
+		trace.SpanFromContext(ctx).SetStatus(codes.Error, "internal server error")
 		return &gen.GetBookingsInternalServerError{
 			Error: err.Error(),
 		}, nil
@@ -163,6 +168,7 @@ func (h *Handler) GetBookingByID(
 			}, nil
 		}
 
+		trace.SpanFromContext(ctx).SetStatus(codes.Error, "internal server error")
 		return &gen.GetBookingByIDInternalServerError{
 			Error: err.Error(),
 		}, nil
@@ -193,6 +199,7 @@ func (h *Handler) CancelBooking(
 			}, nil
 		}
 
+		trace.SpanFromContext(ctx).SetStatus(codes.Error, "internal server error")
 		return &gen.CancelBookingInternalServerError{
 			Error: err.Error(),
 		}, nil

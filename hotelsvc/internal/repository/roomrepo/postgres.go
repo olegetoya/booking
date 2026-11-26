@@ -1,6 +1,7 @@
 package roomrepo
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -19,8 +20,8 @@ func NewRoomPostgres(db *sql.DB) *RoomPostgres {
 	return &RoomPostgres{db: db}
 }
 
-func (r *RoomPostgres) Create(hotelId int64, room *model.Room) (int64, error) {
-	err := r.db.QueryRow(
+func (r *RoomPostgres) Create(ctx context.Context, hotelId int64, room *model.Room) (int64, error) {
+	err := r.db.QueryRowContext(ctx,
 		`INSERT INTO rooms (hotel_id, room_num, type, cost, available, created_at, updated_at)
 	VALUES ($1, $2, $3, $4, $5, $6, $7)
     RETURNING id`,
@@ -38,8 +39,8 @@ func (r *RoomPostgres) Create(hotelId int64, room *model.Room) (int64, error) {
 	return room.Id, nil
 }
 
-func (r *RoomPostgres) Update(hotelId, id int64, room *model.Room) error {
-	result, err := r.db.Exec(
+func (r *RoomPostgres) Update(ctx context.Context, hotelId, id int64, room *model.Room) error {
+	result, err := r.db.ExecContext(ctx,
 		`UPDATE rooms 
 SET
 		hotel_id = $1,
@@ -72,9 +73,9 @@ WHERE id = $7`,
 	return nil
 }
 
-func (r *RoomPostgres) Get(hotelId, id int64) (*model.Room, error) {
+func (r *RoomPostgres) Get(ctx context.Context, hotelId, id int64) (*model.Room, error) {
 	var room model.Room
-	err := r.db.QueryRow(
+	err := r.db.QueryRowContext(ctx,
 		`SELECT hotel_id, room_num, type, cost, available, created_at, updated_at FROM rooms WHERE id = $1 AND hotel_id = $2`,
 		id, hotelId).Scan(&room.HotelId, &room.RoomNum, &room.Type, &room.Cost, &room.IsAvailable, &room.CreatedAt, &room.UpdatedAt)
 	if err != nil {
@@ -90,10 +91,10 @@ func (r *RoomPostgres) Get(hotelId, id int64) (*model.Room, error) {
 	return &room, nil
 }
 
-func (r *RoomPostgres) GetAll(hotelId int64) ([]*model.Room, error) {
+func (r *RoomPostgres) GetAll(ctx context.Context, hotelId int64) ([]*model.Room, error) {
 	var rooms []*model.Room
 
-	rows, err := r.db.Query(
+	rows, err := r.db.QueryContext(ctx,
 		`SELECT id, hotel_id, room_num, type, cost, available, created_at, updated_at FROM rooms WHERE hotel_id = $1`, hotelId,
 	)
 	if err != nil {
@@ -123,8 +124,8 @@ func (r *RoomPostgres) GetAll(hotelId int64) ([]*model.Room, error) {
 	return rooms, nil
 }
 
-func (r *RoomPostgres) Delete(hotelId, id int64) error {
-	result, err := r.db.Exec(
+func (r *RoomPostgres) Delete(ctx context.Context, hotelId, id int64) error {
+	result, err := r.db.ExecContext(ctx,
 		`DELETE FROM rooms WHERE id = $1 AND hotel_id = $2`, id, hotelId)
 	if err != nil {
 		return fmt.Errorf("repo delete room id=%d: %w", id, err)

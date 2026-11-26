@@ -2,9 +2,14 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/olegetoya/booking/notificationsvc/internal/events"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type NotificationRepository interface {
@@ -13,6 +18,7 @@ type NotificationRepository interface {
 		to string,
 		subject string,
 		body string,
+		attempt int,
 	) error
 }
 
@@ -34,8 +40,13 @@ func NewNotificationService(
 func (s *NotificationService) BookingCreated(
 	ctx context.Context,
 	event events.BookingCreated,
-) error {
+) (resultErr error) {
 	const op = "service.NotificationService.BookingCreated"
+	trace.SpanFromContext(ctx).SetAttributes(attribute.String("event.name", "booking.created"), attribute.Int64("booking.id", event.BookingID))
+	ctx, span := otel.Tracer("notificationsvc/service").Start(ctx, "booking.created notify",
+		trace.WithAttributes(attribute.Int64("booking.id", event.BookingID)),
+	)
+	defer func() { finishNotificationSpan(span, resultErr) }()
 
 	subject := fmt.Sprintf(
 		"Бронирование №%d подтверждено",
@@ -68,8 +79,13 @@ func (s *NotificationService) BookingCreated(
 func (s *NotificationService) BookingCancelled(
 	ctx context.Context,
 	event events.BookingCancelled,
-) error {
+) (resultErr error) {
 	const op = "service.NotificationService.BookingCancelled"
+	trace.SpanFromContext(ctx).SetAttributes(attribute.String("event.name", "booking.cancelled"), attribute.Int64("booking.id", event.BookingID))
+	ctx, span := otel.Tracer("notificationsvc/service").Start(ctx, "booking.cancelled notify",
+		trace.WithAttributes(attribute.Int64("booking.id", event.BookingID)),
+	)
+	defer func() { finishNotificationSpan(span, resultErr) }()
 
 	subject := fmt.Sprintf(
 		"Бронирование №%d отменено",
@@ -81,9 +97,17 @@ func (s *NotificationService) BookingCancelled(
 		event.BookingID,
 	)
 
-	if err := s.repo.Send(ctx, s.email, subject, body); err != nil {
+	if err := s.repo.Send(ctx, s.email, subject, body, 1); err != nil {
 		return fmt.Errorf("%s: send email: %w", op, err)
 	}
 
 	return nil
+}
+
+func finishNotificationSpan(span trace.Span, err error) {
+	defer span.End()
+	if err != nil {
+		span.RecordError(errors.New("notification delivery failed"))
+		span.SetStatus(codes.Error, "notification delivery failed")
+	}
 }

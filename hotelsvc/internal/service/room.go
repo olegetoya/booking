@@ -1,8 +1,10 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
+
 	"github.com/olegetoya/booking/hotelsvc/internal/converter"
 	"github.com/olegetoya/booking/hotelsvc/internal/dto"
 	"github.com/olegetoya/booking/hotelsvc/internal/model"
@@ -20,14 +22,14 @@ func NewRoomService(repo RoomStorage) *RoomService {
 }
 
 type RoomStorage interface {
-	Create(hotelId int64, room *model.Room) (int64, error)
-	Update(hotelId, id int64, room *model.Room) error
-	GetAll(hotelId int64) ([]*model.Room, error)
-	Get(hotelId, id int64) (*model.Room, error)
-	Delete(hotelId, id int64) error
+	Create(ctx context.Context, hotelId int64, room *model.Room) (int64, error)
+	Update(ctx context.Context, hotelId, id int64, room *model.Room) error
+	GetAll(ctx context.Context, hotelId int64) ([]*model.Room, error)
+	Get(ctx context.Context, hotelId, id int64) (*model.Room, error)
+	Delete(ctx context.Context, hotelId, id int64) error
 }
 
-func (r *RoomService) Create(hotelId int64, room *dto.Room) error {
+func (r *RoomService) Create(ctx context.Context, hotelId int64, room *dto.Room) error {
 	err := validateRoomInfo(room)
 	if err != nil {
 		return fmt.Errorf("service create room: %w", errors.Join(my_errors.RoomValidationErr, err))
@@ -36,14 +38,14 @@ func (r *RoomService) Create(hotelId int64, room *dto.Room) error {
 	if err != nil {
 		return fmt.Errorf("service create room: convert dto to model: %w", err)
 	}
-	_, err = r.repo.Create(hotelId, &roomConv)
+	_, err = r.repo.Create(ctx, hotelId, &roomConv)
 	if err != nil {
 		return fmt.Errorf("service create room: %w", err)
 	}
 	return nil
 }
 
-func (r *RoomService) Update(hotelId, id int64, room *dto.Room) error {
+func (r *RoomService) Update(ctx context.Context, hotelId, id int64, room *dto.Room) error {
 	err := validateRoomInfo(room)
 	if err != nil {
 		return fmt.Errorf("service update room id=%d: %w", id, errors.Join(my_errors.RoomValidationErr, err))
@@ -52,15 +54,15 @@ func (r *RoomService) Update(hotelId, id int64, room *dto.Room) error {
 	if err != nil {
 		return fmt.Errorf("service update room id=%d: convert dto to model: %w", id, err)
 	}
-	err = r.repo.Update(hotelId, id, &roomConv)
+	err = r.repo.Update(ctx, hotelId, id, &roomConv)
 	if err != nil {
 		return fmt.Errorf("service update room id=%d: %w", id, err)
 	}
 	return nil
 }
 
-func (r *RoomService) GetAll(hotelId int64) ([]*dto.Room, error) {
-	rooms, err := r.repo.GetAll(hotelId)
+func (r *RoomService) GetAll(ctx context.Context, hotelId int64) ([]*dto.Room, error) {
+	rooms, err := r.repo.GetAll(ctx, hotelId)
 	if err != nil {
 		return nil, fmt.Errorf("service get all rooms hotelID=%d: %w", hotelId, err)
 	}
@@ -77,8 +79,8 @@ func (r *RoomService) GetAll(hotelId int64) ([]*dto.Room, error) {
 	return roomsDTO, nil
 }
 
-func (r *RoomService) Get(hotelId, id int64) (*dto.Room, error) {
-	room, err := r.repo.Get(hotelId, id)
+func (r *RoomService) Get(ctx context.Context, hotelId, id int64) (*dto.Room, error) {
+	room, err := r.repo.Get(ctx, hotelId, id)
 	if err != nil {
 		return nil, fmt.Errorf("service get room id=%d: %w", id, err)
 	}
@@ -91,8 +93,8 @@ func (r *RoomService) Get(hotelId, id int64) (*dto.Room, error) {
 	return &roomDTO, nil
 }
 
-func (r *RoomService) Delete(hotelId, id int64) error {
-	err := r.repo.Delete(hotelId, id)
+func (r *RoomService) Delete(ctx context.Context, hotelId, id int64) error {
+	err := r.repo.Delete(ctx, hotelId, id)
 	if err != nil {
 		return fmt.Errorf("service delete room id=%d: %w", id, err)
 	}

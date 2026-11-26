@@ -25,7 +25,7 @@ func (s *NotificationService) sendWithRetry(
 			return err
 		}
 
-		err := s.repo.Send(ctx, to, subject, body)
+		err := s.repo.Send(ctx, to, subject, body, attempt)
 		if err == nil {
 			return nil
 		}

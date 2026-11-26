@@ -3,13 +3,20 @@ package gmail
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"mime"
 	"net"
 	"net/mail"
 	"net/smtp"
+	"net/textproto"
 	"strings"
 	"time"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Repository struct {
@@ -38,8 +45,25 @@ func (r *Repository) Send(
 	to string,
 	subject string,
 	body string,
-) error {
+	attempt int,
+) (resultErr error) {
 	const op = "gmail.Repository.Send"
+
+	ctx, span := otel.Tracer("notificationsvc/smtp").Start(ctx, "SMTP send",
+		trace.WithSpanKind(trace.SpanKindClient),
+		trace.WithAttributes(attribute.Int("smtp.attempt", attempt)),
+	)
+	defer func() {
+		if resultErr != nil {
+			var reply *textproto.Error
+			if errors.As(resultErr, &reply) {
+				span.SetAttributes(attribute.Int("smtp.response.code", reply.Code))
+			}
+			span.RecordError(errors.New("smtp attempt failed"))
+			span.SetStatus(codes.Error, "smtp attempt failed")
+		}
+		span.End()
+	}()
 
 	if ctx.Err() != nil {
 		return ctx.Err()
@@ -65,6 +89,10 @@ func (r *Repository) Send(
 		return fmt.Errorf("%s: connect smtp: %w", op, err)
 	}
 
+	defer conn.Close()
+	stop := context.AfterFunc(ctx, func() { _ = conn.Close() })
+	defer stop()
+
 	deadline := time.Now().Add(30 * time.Second)
 
 	if ctxDeadline, ok := ctx.Deadline(); ok &&
@@ -73,16 +101,13 @@ func (r *Repository) Send(
 	}
 
 	if err := conn.SetDeadline(deadline); err != nil {
-		conn.Close()
 		return fmt.Errorf("%s: set deadline: %w", op, err)
 	}
 
 	client, err := smtp.NewClient(conn, r.host)
 	if err != nil {
-		conn.Close()
 		return fmt.Errorf("%s: create smtp client: %w", op, err)
 	}
-	defer client.Close()
 
 	if ok, _ := client.Extension("STARTTLS"); !ok {
 		return fmt.Errorf("%s: server does not support STARTTLS", op)

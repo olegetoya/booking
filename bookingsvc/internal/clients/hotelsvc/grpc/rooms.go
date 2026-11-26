@@ -8,7 +8,7 @@ import (
 	"github.com/olegetoya/booking/bookingsvc/internal/domain"
 	"github.com/olegetoya/booking/bookingsvc/internal/metrics"
 	roomsv1 "github.com/olegetoya/booking/protos/gen/go/hotelsvc/rooms"
-
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -22,6 +22,7 @@ func NewRoomsClient(addr string, timeout time.Duration) (*RoomsClient, error) {
 	conn, err := grpc.NewClient(
 		"passthrough:///"+addr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 		grpc.WithUnaryInterceptor(metrics.UnaryClientInterceptor),
 	)
 	if err != nil {

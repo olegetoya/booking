@@ -3,31 +3,34 @@ package grpcSrv
 import (
 	"context"
 	"fmt"
+	"log/slog"
+
 	"github.com/olegetoya/booking/hotelsvc/internal/converter"
 	"github.com/olegetoya/booking/hotelsvc/internal/model"
 	roomsv1 "github.com/olegetoya/booking/protos/gen/go/hotelsvc/rooms"
-	"log/slog"
 )
 
 type RoomStorage interface {
-	GetAll(hotelId int64) ([]*model.Room, error)
-	Get(hotelId, id int64) (*model.Room, error)
+	GetAll(ctx context.Context, hotelId int64) ([]*model.Room, error)
+	Get(ctx context.Context, hotelId, id int64) (*model.Room, error)
 }
 
 type RoomsServer struct {
 	repo RoomStorage
+	log  *slog.Logger
 }
 
-func NewRoomsServer(repo RoomStorage) *RoomsServer {
+func NewRoomsServer(repo RoomStorage, log *slog.Logger) *RoomsServer {
 	return &RoomsServer{
 		repo: repo,
+		log:  log,
 	}
 }
 
 func (srv *RoomsServer) GetAll(ctx context.Context, hotelId int64) ([]*roomsv1.Room, error) {
-	rooms, err := srv.repo.GetAll(hotelId)
+	rooms, err := srv.repo.GetAll(ctx, hotelId)
 	if err != nil {
-		slog.Warn("err trying to get all rooms: %v", slog.String("err", err.Error()))
+		srv.log.WarnContext(ctx, "failed to get all rooms", slog.String("err", err.Error()))
 		return nil, fmt.Errorf("service get all rooms hotelID=%d: %w", hotelId, err)
 	}
 
@@ -44,9 +47,9 @@ func (srv *RoomsServer) GetAll(ctx context.Context, hotelId int64) ([]*roomsv1.R
 }
 
 func (srv *RoomsServer) Get(ctx context.Context, hotelId, id int64) (*roomsv1.Room, error) {
-	room, err := srv.repo.Get(hotelId, id)
+	room, err := srv.repo.Get(ctx, hotelId, id)
 	if err != nil {
-		slog.Warn("err trying to get room: %v", slog.String("err", err.Error()))
+		srv.log.WarnContext(ctx, "failed to get room", slog.String("err", err.Error()))
 		return nil, fmt.Errorf("service get room id=%d: %w", id, err)
 	}
 	roomGRPC, err := converter.ConvertToGRPCRoom(room)

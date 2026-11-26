@@ -2,14 +2,16 @@ package main
 
 import (
 	"context"
-	"github.com/joho/godotenv"
-	"github.com/olegetoya/booking/bookingsvc/internal/app"
-	"github.com/olegetoya/booking/bookingsvc/internal/config"
 	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/joho/godotenv"
+	"github.com/olegetoya/booking/bookingsvc/internal/app"
+	"github.com/olegetoya/booking/bookingsvc/internal/config"
+	"github.com/olegetoya/booking/bookingsvc/internal/telemetry"
 )
 
 const (
@@ -23,6 +25,12 @@ func main() {
 	cfg := config.MustLoad()
 	logger := setupLogger(cfg.Env)
 
+	shutdownTracing, err := telemetry.Init(context.Background(), logger, "bookingsvc")
+	if err != nil {
+		panic(err)
+	}
+	defer shutdownTracing()
+
 	application, err := app.NewApp(logger, cfg)
 	if err != nil {
 		logger.Error("failed to initialize app", slog.Any("error", err))
@@ -30,7 +38,7 @@ func main() {
 	}
 
 	go func() {
-		logger.Info("starting application bookingsvc", slog.Any("config", cfg))
+		logger.Info("starting application bookingsvc")
 		if err := application.Run(); err != nil {
 			logger.Error("failed to run app:", slog.Any("error", err))
 			panic(err)
@@ -47,7 +55,6 @@ func main() {
 
 	if err := application.Stop(ctx); err != nil {
 		logger.Error("failed to stop app:", slog.Any("error", err))
-		panic(err)
 	}
 }
 
@@ -67,5 +74,8 @@ func setupLogger(env string) *slog.Logger {
 			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}),
 		)
 	}
-	return log
+	if log == nil {
+		log = slog.Default()
+	}
+	return slog.New(telemetry.LogHandler{Handler: log.Handler()})
 }

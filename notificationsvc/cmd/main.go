@@ -12,14 +12,14 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-
 	"github.com/olegetoya/booking/notificationsvc/internal/app"
 	"github.com/olegetoya/booking/notificationsvc/internal/config"
+	"github.com/olegetoya/booking/notificationsvc/internal/telemetry"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
-	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	log := slog.New(telemetry.LogHandler{Handler: slog.NewTextHandler(os.Stdout, nil)})
 
 	if err := run(log); err != nil {
 		log.Error("application stopped", slog.Any("error", err))
@@ -29,6 +29,12 @@ func main() {
 
 func run(log *slog.Logger) error {
 	cfg := config.MustLoad()
+
+	shutdownTracing, err := telemetry.Init(context.Background(), log, "notificationsvc")
+	if err != nil {
+		return err
+	}
+	defer shutdownTracing()
 
 	application, err := app.NewApp(log, cfg)
 	if err != nil {

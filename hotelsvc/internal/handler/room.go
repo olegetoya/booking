@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -19,11 +20,11 @@ func NewRoomHandler(service RoomService) *RoomHandler {
 }
 
 type RoomService interface {
-	Create(hotelID int64, room *dto.Room) error
-	Update(hotelID, roomID int64, room *dto.Room) error
-	GetAll(hotelID int64) ([]*dto.Room, error)
-	Get(hotelID, roomID int64) (*dto.Room, error)
-	Delete(hotelID, roomID int64) error
+	Create(ctx context.Context, hotelID int64, room *dto.Room) error
+	Update(ctx context.Context, hotelID, roomID int64, room *dto.Room) error
+	GetAll(ctx context.Context, hotelID int64) ([]*dto.Room, error)
+	Get(ctx context.Context, hotelID, roomID int64) (*dto.Room, error)
+	Delete(ctx context.Context, hotelID, roomID int64) error
 }
 
 func (rh *RoomHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -46,7 +47,7 @@ func (rh *RoomHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := rh.service.Create(hotelID, &room); err != nil {
+	if err := rh.service.Create(r.Context(), hotelID, &room); err != nil {
 		handleRoomError(w, "create room", hotelID, 0, true, false, err)
 		return
 	}
@@ -68,7 +69,7 @@ func (rh *RoomHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rooms, err := rh.service.GetAll(hotelID)
+	rooms, err := rh.service.GetAll(r.Context(), hotelID)
 	if err != nil {
 		handleRoomError(w, "get all rooms", hotelID, 0, true, false, err)
 		return
@@ -97,7 +98,7 @@ func (rh *RoomHandler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	room, err := rh.service.Get(hotelID, roomID)
+	room, err := rh.service.Get(r.Context(), hotelID, roomID)
 	if err != nil {
 		handleRoomError(w, "get room", hotelID, roomID, true, true, err)
 		return
@@ -138,7 +139,7 @@ func (rh *RoomHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := rh.service.Update(hotelID, roomID, &room); err != nil {
+	if err := rh.service.Update(r.Context(), hotelID, roomID, &room); err != nil {
 		handleRoomError(w, "update room", hotelID, roomID, true, true, err)
 		return
 	}
@@ -167,7 +168,7 @@ func (rh *RoomHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := rh.service.Delete(hotelID, roomID); err != nil {
+	if err := rh.service.Delete(r.Context(), hotelID, roomID); err != nil {
 		handleRoomError(w, "delete room", hotelID, roomID, true, true, err)
 		return
 	}

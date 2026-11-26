@@ -77,9 +77,14 @@ services:
       dockerfile: Dockerfile
 
     environment:
+      OTEL_SERVICE_NAME: hotelsvc
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
       DB_DSN: "postgres://booking:booking@hotels-db:5432/hotels?sslmode=disable"
 
     depends_on:
+      jaeger:
+        condition: service_healthy
+
       hotels-db:
         condition: service_healthy
 
@@ -97,9 +102,14 @@ services:
       dockerfile: Dockerfile
 
     environment:
+      OTEL_SERVICE_NAME: bookingsvc
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
       POSTGRES_DSN: "postgres://booking:booking@bookings-db:5432/bookings?sslmode=disable"
 
     depends_on:
+      jaeger:
+        condition: service_healthy
+
       bookings-db:
         condition: service_healthy
 
@@ -123,7 +133,13 @@ services:
     env_file:
       - ./notificationsvc/.env
 
+    environment:
+      OTEL_SERVICE_NAME: notificationsvc
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
     depends_on:
+      jaeger:
+        condition: service_healthy
+
       kafka:
         condition: service_healthy
 
@@ -209,7 +225,38 @@ services:
     depends_on:
       - prometheus
 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.19.26
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s"]
+      interval: 5s
+      timeout: 8s
+      retries: 24
+
+  jaeger:
+    image: jaegertracing/jaeger:2.18.0
+    command: ["--config=/etc/jaeger/config.yaml"]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:13133/status"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - ./observability/jaeger/config.yaml:/etc/jaeger/config.yaml:ro
+    ports:
+      - "127.0.0.1:16686:16686"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
 volumes:
+  elasticsearch-data:
   hotels_data:
   bookings_data:
   kafka-data:

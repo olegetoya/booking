@@ -2,11 +2,13 @@ package grpcapp
 
 import (
 	"fmt"
-	grpchandler "github.com/olegetoya/booking/hotelsvc/internal/handler/grpc"
-	"github.com/olegetoya/booking/hotelsvc/internal/metrics"
-	"google.golang.org/grpc"
 	"log/slog"
 	"net"
+
+	grpchandler "github.com/olegetoya/booking/hotelsvc/internal/handler/grpc"
+	"github.com/olegetoya/booking/hotelsvc/internal/metrics"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"google.golang.org/grpc"
 )
 
 type App struct {
@@ -17,6 +19,7 @@ type App struct {
 
 func New(log *slog.Logger, rooms grpchandler.Rooms, port int) *App {
 	gRPCServer := grpc.NewServer(
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 		grpc.UnaryInterceptor(metrics.UnaryServerInterceptor),
 	)
 	grpchandler.Register(gRPCServer, rooms)
