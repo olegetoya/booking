@@ -1,0 +1,26 @@
+services:
+  notificationsvc:
+    environment:
+      SMTP_HOST: smtp-test
+      SMTP_PORT: "1025"
+      SMTP_USER: sender@example.test
+      SMTP_PASSWORD: local-test
+      SMTP_RECIPIENT: recipient@example.test
+      SSL_CERT_FILE: /test-ca/cert.pem
+    volumes:
+      - ${SMTP_TEST_CERT_DIR:?set SMTP_TEST_CERT_DIR}/cert.pem:/test-ca/cert.pem:ro
+    depends_on:
+      smtp-test:
+        condition: service_started
+
+  smtp-test:
+    image: axllent/mailpit:v1.27.8
+    environment:
+      MP_SMTP_TLS_CERT: /tls/cert.pem
+      MP_SMTP_TLS_KEY: /tls/key.pem
+      MP_SMTP_REQUIRE_STARTTLS: "true"
+      MP_SMTP_AUTH_ACCEPT_ANY: "true"
+    volumes:
+      - ${SMTP_TEST_CERT_DIR:?set SMTP_TEST_CERT_DIR}:/tls:ro
+    ports:
+      - "127.0.0.1:8025:8025"
